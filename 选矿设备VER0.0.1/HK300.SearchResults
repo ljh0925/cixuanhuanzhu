@@ -1,0 +1,4 @@
+---- SetDefault 匹配 (3 在 2 文件 ) ----
+Menu_and_setting.c (shiyan\src\tasks):	{ "5.恢复出厂",     0,  NULL,       &mu[3],     NULL,       NULL,       SetDefault,     0,      NULL,               NULL,},	//4  
+Menu_and_setting.c (shiyan\src\tasks):void SetDefault(void)
+Menu_and_setting.h (shiyan\src\tasks):void SetDefault(void);
