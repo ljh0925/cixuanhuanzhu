@@ -126,7 +126,6 @@
 			<Folder
 				Name="UCOS-II"
 				Filters="">
-				<F N="SOURCE/OS_CORE.C"/>
 				<F N="SOURCE/os_corex.c"/>
 				<F N="arm/Os_cpu_c.c"/>
 				<F N="SOURCE/OS_CPU_C.C"/>
@@ -184,14 +183,12 @@
 			<F N="cixuan/src/tasks/menu_and_setting.h"/>
 			<F N="cixuan/src/OS_CFG.H"/>
 			<F N="arm/OS_CPU.H"/>
-			<F N="SOURCE/OS_CPU.H"/>
 			<F N="Arm_Pc/PC.H"/>
 			<F N="SOURCE/register.h"/>
 			<F N="cixuan/src/target.h"/>
 			<F N="tcpip/INCLUDE/TCP.H"/>
 			<F N="cixuan/src/drives/UART/Uart_driver.h"/>
 			<F N="SOURCE/uCOS_II.H"/>
-			<F N="SOURCE/ucos_iix.h"/>
 			<F N="tcpip/INCLUDE/UDP.H"/>
 			<F N="tcpip/INCLUDE/Udp_bak.h"/>
 			<F N="tcpip/INCLUDE/UTILITS.H"/>
