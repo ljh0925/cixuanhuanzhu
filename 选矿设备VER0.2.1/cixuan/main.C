@@ -652,6 +652,19 @@ void TaskStart_CreateTasks(void)
 	ToggleWD();
 
 
+	/*task 0*/
+    //建立串口1接收GPRS处理任务
+	OSTaskCreateExt(Task_Com0,
+					(void *)0,
+					&TASK_COM0_STK[TASK_STK_BIG_SIZE - 1],
+					TASK_COM0_PRIO,
+					TASK_COM0_ID,
+					&TASK_COM0_STK[0],
+					TASK_STK_BIG_SIZE,
+					(void *)0,
+					OS_TASK_OPT_STK_CHK | OS_TASK_OPT_STK_CLR);
+
+
     /*task 1*/
     //建立串口1接收GPRS处理任务
 	OSTaskCreateExt(Task_Com1,
