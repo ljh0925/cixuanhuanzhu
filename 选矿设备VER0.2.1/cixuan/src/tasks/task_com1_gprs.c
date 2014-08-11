@@ -204,7 +204,7 @@ void Task_Com1(void *data)
 
 	for ( ;; )
 	{
-com1_start:
+//com1_start:
 		//  	OSTimeDlyHMSM(0, 0, 10, 0);
 		OSTimeDlyHMSM(0, 0, 10, 0);
 

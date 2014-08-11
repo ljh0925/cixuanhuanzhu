@@ -19,7 +19,7 @@
 *********************************************************************************************************
 */
 
-#define OS_MAX_EVENTS            42    /* Max. number of event control blocks in your application ...  */
+#define OS_MAX_EVENTS            10    /* Max. number of event control blocks in your application ...  */
                                        /* ... MUST be > 0                                              */
 #define OS_MAX_FLAGS              8    /* Max. number of Event Flag Groups    in your application ...  */
                                        /* ... MUST be > 0                                              */
@@ -27,7 +27,7 @@
                                        /* ... MUST be > 0                                              */
 #define OS_MAX_QS                 2    /* Max. number of queue control blocks in your application ...  */
                                        /* ... MUST be > 0                                              */
-#define OS_MAX_TASKS             25    /* Max. number of tasks in your application ...                 */
+#define OS_MAX_TASKS             11    /* Max. number of tasks in your application ...                 */
                                        /* ... MUST be >= 2                                             */
 
 #define OS_LOWEST_PRIO           62    /* Defines the lowest priority that can be assigned ...         */
