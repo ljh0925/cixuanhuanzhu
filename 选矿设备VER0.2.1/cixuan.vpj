@@ -1,0 +1,210 @@
+<!DOCTYPE Project SYSTEM "http://www.slickedit.com/dtd/vse/10.0/vpj.dtd">
+<Project
+	Version="10.0"
+	VendorName="SlickEdit"
+	TemplateName="ADS1.2"
+	Customized="1"
+	WorkingDir=".">
+	<Config
+		Name="Release"
+		OutputFile=""
+		CompilerConfigName="">
+		<Menu>
+			<Target
+				Name="Compile"
+				MenuCaption="&amp;Compile"
+				CaptureOutputWith="ProcessBuffer"
+				SaveOption="SaveCurrent"
+				RunFromDir="%rw">
+				<Exec/>
+			</Target>
+			<Target
+				Name="Build"
+				MenuCaption="&amp;Build"
+				CaptureOutputWith="ProcessBuffer"
+				SaveOption="SaveWorkspaceFiles"
+				RunFromDir="%rw">
+				<Exec/>
+			</Target>
+			<Target
+				Name="Rebuild"
+				MenuCaption="&amp;Rebuild"
+				CaptureOutputWith="ProcessBuffer"
+				SaveOption="SaveWorkspaceFiles"
+				RunFromDir="%rw">
+				<Exec/>
+			</Target>
+			<Target
+				Name="Debug"
+				MenuCaption="&amp;Debug"
+				SaveOption="SaveNone"
+				RunFromDir="%rw">
+				<Exec/>
+			</Target>
+			<Target
+				Name="Execute"
+				MenuCaption="E&amp;xecute"
+				SaveOption="SaveNone"
+				RunFromDir="%rw">
+				<Exec CmdLine='".exe"'/>
+			</Target>
+		</Menu>
+		<Includes>
+			<Include Dir="D:/Program Files/ARM/ADSv1_2/Include"/>
+		</Includes>
+	</Config>
+	<Files>
+		<Folder
+			Name="Source Files"
+			Filters="*.c;*.C;*.cc;*.cpp;*.cp;*.cxx;*.c++;*.prg;*.pas;*.dpr;*.asm;*.s;*.bas;*.java;*.cs;*.sc;*.e;*.cob;*.html;*.rc;*.tcl;*.py;*.pl;*.d;*.m;*.mm">
+			<Folder
+				Name="driver"
+				Filters="">
+				<F N="cixuan/src/drives/RX8025/drv_8025.c"/>
+				<F N="cixuan/src/drives/RX8025/drv_8025.h"/>
+				<F N="cixuan/src/drives/AD5410/drv_ad5410.c"/>
+				<F N="cixuan/src/drives/AD5410/drv_ad5410.h"/>
+				<F N="cixuan/src/drives/ad5530/drv_ad5530.c"/>
+				<F N="cixuan/src/drives/ad5530/drv_ad5530.h"/>
+				<F N="cixuan/src/drives/ad7680/drv_ad7680.c"/>
+				<F N="cixuan/src/drives/ad7680/drv_ad7680.h"/>
+				<F N="cixuan/src/drives/alerm/drv_alerm.c"/>
+				<F N="cixuan/src/drives/alerm/drv_alerm.h"/>
+				<F N="cixuan/src/drives/buzzer/drv_buzzer.c"/>
+				<F N="cixuan/src/drives/buzzer/drv_buzzer.h"/>
+				<F N="cixuan/src/drives/delay/drv_delay.c"/>
+				<F N="cixuan/src/drives/delay/drv_delay.h"/>
+				<F N="cixuan/src/drives/dido/drv_dido.c"/>
+				<F N="cixuan/src/drives/dido/drv_dido.h"/>
+				<F N="cixuan/src/drives/display/drv_display.c"/>
+				<F N="cixuan/src/drives/display/drv_display.h"/>
+				<F N="cixuan/src/drives/flash/drv_flash.c"/>
+				<F N="cixuan/src/drives/flash/drv_flash.h"/>
+				<F N="cixuan/src/drives/I2C/drv_i2c.c"/>
+				<F N="cixuan/src/drives/I2C/drv_i2c.h"/>
+				<F N="cixuan/src/drives/keyboard/drv_keyboard.c"/>
+				<F N="cixuan/src/drives/keyboard/drv_keyboard.h"/>
+				<F N="cixuan/src/drives/ltc1448/drv_ltc1448.c"/>
+				<F N="cixuan/src/drives/ltc1448/drv_ltc1448.h"/>
+				<F N="cixuan/src/drives/rtc/drv_rtc.c"/>
+				<F N="cixuan/src/drives/rtc/drv_rtc.h"/>
+				<F N="cixuan/src/drives/tlc2543/drv_tlc2543.c"/>
+				<F N="cixuan/src/drives/tlc2543/drv_tlc2543.h"/>
+				<F N="cixuan/src/drives/workled/drv_workled.c"/>
+				<F N="cixuan/src/drives/workled/drv_workled.h"/>
+			</Folder>
+			<Folder
+				Name="tasks"
+				Filters="">
+				<F N="cixuan/src/tasks/task_actuator.c"/>
+				<F N="cixuan/src/tasks/task_agc_output.c"/>
+				<F N="cixuan/src/tasks/task_back_light_ctrl.c"/>
+				<F N="cixuan/src/tasks/task_buzzer.c"/>
+				<F N="cixuan/src/tasks/task_com0.c"/>
+				<F N="cixuan/src/tasks/task_com1_gprs.c"/>
+				<F N="cixuan/src/tasks/task_display_time.c"/>
+				<F N="cixuan/src/tasks/task_general_control.c"/>
+				<F N="cixuan/src/tasks/task_net.c"/>
+				<F N="cixuan/src/tasks/task_read_ad7680.c"/>
+				<F N="cixuan/src/tasks/task_read_tlc2543.c"/>
+				<F N="cixuan/src/tasks/task_switch.c"/>
+				<F N="cixuan/src/tasks/task_work_led.c"/>
+				<F N="cixuan/src/tasks/task_actuator.h"/>
+				<F N="cixuan/src/tasks/task_agc_output.h"/>
+				<F N="cixuan/src/tasks/task_back_light_ctrl.h"/>
+				<F N="cixuan/src/tasks/task_buzzer.h"/>
+				<F N="cixuan/src/tasks/task_com0.h"/>
+				<F N="cixuan/src/tasks/task_com1_gprs.h"/>
+				<F N="cixuan/src/tasks/task_display_time.h"/>
+				<F N="cixuan/src/tasks/task_general_control.h"/>
+				<F N="cixuan/src/tasks/task_net.h"/>
+				<F N="cixuan/src/tasks/task_read_ad7680.h"/>
+				<F N="cixuan/src/tasks/task_read_tlc2543.h"/>
+				<F N="cixuan/src/tasks/task_switch.h"/>
+				<F N="cixuan/src/tasks/task_work_led.h"/>
+			</Folder>
+			<Folder
+				Name="UCOS-II"
+				Filters="">
+				<F N="SOURCE/OS_CORE.C"/>
+				<F N="SOURCE/os_corex.c"/>
+				<F N="arm/Os_cpu_c.c"/>
+				<F N="SOURCE/OS_CPU_C.C"/>
+				<F N="SOURCE/os_dbg_r.c"/>
+				<F N="SOURCE/OS_FLAG.C"/>
+				<F N="SOURCE/OS_MBOX.C"/>
+				<F N="SOURCE/OS_MEM.C"/>
+				<F N="SOURCE/OS_MUTEX.C"/>
+				<F N="SOURCE/OS_Q.C"/>
+				<F N="SOURCE/OS_SEM.C"/>
+				<F N="SOURCE/OS_TASK.C"/>
+				<F N="SOURCE/OS_TIME.C"/>
+				<F N="SOURCE/uCOS_II.C"/>
+				<F N="SOURCE/ucos_iia.c"/>
+				<F N="SOURCE/ucos_iib.c"/>
+				<F N="SOURCE/ucos_iic.c"/>
+				<F N="SOURCE/ucos_iid.c"/>
+			</Folder>
+			<Folder
+				Name="TCP/IP"
+				Filters="">
+				<F N="tcpip/ARP/ARP.C"/>
+				<F N="tcpip/PING/ICMP.C"/>
+				<F N="tcpip/IP/IP.C"/>
+				<F N="tcpip/TCP/TCP.C"/>
+				<F N="tcpip/UDP/UDP.C"/>
+				<F N="tcpip/UDP/Udp_bak.c"/>
+				<F N="tcpip/socket/zlg_socket.c"/>
+				<F N="tcpip/INCLUDE/ARP.H"/>
+				<F N="tcpip/INCLUDE/IP.H"/>
+				<F N="tcpip/INCLUDE/cfg_net.h"/>
+			</Folder>
+			<F N="tcpip/CRC/CRC.C"/>
+			<F N="tcpip/ETHERNET/Ethernet.c"/>
+			<F N="tcpip/HARDWARE/Hardware.c"/>
+			<F N="cixuan/main.C"/>
+			<F N="tcpip/HARDWARE/mcu_hardware.c"/>
+			<F N="cixuan/src/tasks/menu_and_setting.c"/>
+			<F N="Arm_Pc/PC.C"/>
+			<F N="cixuan/src/target.c"/>
+			<F N="cixuan/src/drives/UART/Uart_Driver.c"/>
+		</Folder>
+		<Folder
+			Name="Header Files"
+			Filters="*.h;*.H;*.hh;*.hpp;*.hxx;*.inc;*.sh;*.cpy;*.if">
+			<F N="cixuan/src/config.h"/>
+			<F N="cixuan/data_type.h"/>
+			<F N="tcpip/INCLUDE/ETHERNET.H"/>
+			<F N="tcpip/INCLUDE/HARDWARE.H"/>
+			<F N="tcpip/INCLUDE/ICMP.H"/>
+			<F N="cixuan/src/INCLUDES.H"/>
+			<F N="SOURCE/includes.h"/>
+			<F N="cixuan/src/LPC2294.h"/>
+			<F N="cixuan/main.h"/>
+			<F N="cixuan/src/tasks/menu_and_setting.h"/>
+			<F N="cixuan/src/OS_CFG.H"/>
+			<F N="arm/OS_CPU.H"/>
+			<F N="SOURCE/OS_CPU.H"/>
+			<F N="Arm_Pc/PC.H"/>
+			<F N="SOURCE/register.h"/>
+			<F N="cixuan/src/target.h"/>
+			<F N="tcpip/INCLUDE/TCP.H"/>
+			<F N="cixuan/src/drives/UART/Uart_driver.h"/>
+			<F N="SOURCE/uCOS_II.H"/>
+			<F N="SOURCE/ucos_iix.h"/>
+			<F N="tcpip/INCLUDE/UDP.H"/>
+			<F N="tcpip/INCLUDE/Udp_bak.h"/>
+			<F N="tcpip/INCLUDE/UTILITS.H"/>
+			<F N="tcpip/INCLUDE/zlg_socket.h"/>
+		</Folder>
+		<Folder
+			Name="Resource Files"
+			Filters="*.ico;*.cur;*.dlg"/>
+		<Folder
+			Name="Bitmaps"
+			Filters="*.bmp"/>
+		<Folder
+			Name="Other Files"
+			Filters=""/>
+	</Files>
+</Project>
