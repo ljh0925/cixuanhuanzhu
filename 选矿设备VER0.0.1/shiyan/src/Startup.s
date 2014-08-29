@@ -184,10 +184,10 @@ ResetInit
         LDR     R1, =0x1000ffef
         STR     R1, [R0]
 
-        LDR     R0, =BCFG1
-;        LDR     R1, =0x1000ffef
-		LDR     R1, =0x10001460
-        STR     R1, [R0]
+;        LDR     R0, =BCFG1
+;;        LDR     R1, =0x1000ffef
+;		LDR     R1, =0x10001460
+;        STR     R1, [R0]
 
 ;        LDR     R0, =BCFG2
 ;        LDR     R1, =0x2000ffef

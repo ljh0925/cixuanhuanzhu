@@ -22,9 +22,10 @@
 */
 
 #include "config.h"
-#include "../include/cfg_net.h"
+//#include "../include/cfg_net.h"
 
 char * VERSION = "Ver 0.2.1";			//开机时显示的版本号
+
 /*
 *********************************************************************************************************
 *                                              CONSTANTS
@@ -96,7 +97,7 @@ OS_STK          TASK_START_STK[TASK_STK_SIZE];
 //OS_STK 			TASK_NET_STACK[200];
 //OS_STK          TASK_READ_AD7680_STK[400];
 OS_STK          TASK_AGC_OUTPUT_STK[200];
-//OS_STK          TASK_COM0_STK[TASK_STK_BIG_SIZE];
+OS_STK          TASK_COM0_STK[TASK_STK_BIG_SIZE];
 OS_STK          TASK_COM1_STK[TASK_STK_BIG_SIZE];
 OS_STK          TASK_SWITCH0_STK[256];
 OS_STK          TASK_SWITCH1_STK[256];
@@ -460,6 +461,8 @@ INT8U InitImportantParameter(void)
 	DevStat.err_code = 0x0000;
 	DevStat.id = 0x10;
 	DevStat.mode = AUTO;
+	DevStat.Modbus_client[0] = 0x30;
+	DevStat.Modbus_client[1] = 0x31;
 	//DevStat.passwd = 0;
 	memset((void*)&DevStat.passwd[0], 0x00, 6);
 

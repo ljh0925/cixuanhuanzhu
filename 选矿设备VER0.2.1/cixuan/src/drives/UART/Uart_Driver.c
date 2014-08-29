@@ -802,15 +802,15 @@ void com0_send_hex(INT8U * str_to_send, INT16U len)
 参数描述：
 参数名称：	输入/输出？	类型		描述
 -----------		-----------	------	   	-------
-str_got		输出			INT8U*		得到的字符串
+str_got		 输出			INT8U*		得到的字符串
 timeout_start输入			INT16U		首字超时，单位mS，0死等
-timeout		输入			INT16U		接收字节间隔超时，单位mS
-// endchar		输入			INT8U		提示符
+timeout		 输入			INT16U		接收字节间隔超时，单位mS
+// endchar   输入			INT8U		提示符
 
  返  回  值：ok(0)-成功
 				 KEY_CANCEL-按退出键了
 				 notok(0xFF)-失败，超时
-作      者	：许岩
+作      者：许岩
 日      期：2005-08-20
 修改历史：
 日期		修改人		修改描述

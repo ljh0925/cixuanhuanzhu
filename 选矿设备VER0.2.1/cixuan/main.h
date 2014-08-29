@@ -88,49 +88,67 @@ typedef struct _DEV_STAT
 	INT8U err_occured;					// == TRUE出错 ＝＝FALSE设备正常
 	INT16U err_code;					//出错代码
 
-	INT16U ad_avg[5][AD_QUEUE_LEN];    //ad最近4次采样值
+	INT16U ad_avg[5][AD_QUEUE_LEN];     //ad最近4次采样值
 	INT8U ad_avg_ptr;                   //采样值写入指针
-	
-	INT8U start;
+	INT8U allow_upload_data;			//采集标志
+//	INT8U databox_cmd_rcvd;				//是否接收到数据盒的命令
+//  INT8U gps_cmd_rcvd;                 //是否接收到数据盒的命令
+	INT8U gprs_connected;               //GPRS是否连接服务器
 
+	INT8U start;
 	INT8U id;							// id号
 	INT8U mode;							//模式 AUTO=自动   MANUAL=手动
-
-	INT8U passwd[6];						//进入设置界面的密码
-
+	INT8U passwd[6];					//进入设置界面的密码
+	INT8U bus_number[3];                //设备编号
+	INT8U line_number[2];				//商户编号
+	INT8U kind_of_iron;					//矿粉类型
+	INT8U ratio_of_iron;				//矿粉含量比例
+	BUS_TIME original_time;				//开机时间
+	BUS_TIME last_time;					//末次与后台通讯时间
+	BUS_TIME alerm_time;				//报警时间记录
 	INT8U reset_times;					//复位次数
-	INT16U crc;						   //参数的CRC校验码
-	INT8U reptpasswdtimes;			   //进入设置界面的密码
-
-	INT16U record_base_ptr;					//未上传记录指针起始指针(原p0+2) 
-	INT16U last_record_base_ptr;			//正常补采的记录起始指针
-	INT16U last_record_number;				//正常补采的记录条数
-
+	INT16U crc;						    //参数的CRC校验码
+	INT8U reptpasswdtimes;			    //进入设置界面的密码
+	INT16U record_base_ptr;				//未上传记录指针起始指针(原p0+2) 
+	INT16U last_record_base_ptr;		//正常补采的记录起始指针
+	INT16U last_record_number;			//正常补采的记录条数
+	INT8U Modbus_client[2];				//modbud从机地址ascii 格式保存
+	INT8U alermed;						//是否产生报警标志，0-没有报警，1-已经报警过
 	INT8U end;
-	
-	INT8U drec[20];							//司机记录 4字节司机编号+8字节车号+7字节时间+1字节上下班标志
-	INT8U have_drec;						//是否有未上传的drec，是=TRUE 否=FALSE
-	INT8U update_time;						//是否准备与服务器同步时间，是=TRUE 否=FALSE
-	INT16U record_number;					//未上传的记录条数(原p0+4)
 
+	INT16U	packno;	
+	INT8U drec[20];						//司机记录 4字节司机编号+8字节车号+7字节时间+1字节上下班标志
+	INT8U have_drec;					//是否有未上传的drec，是=TRUE 否=FALSE
+	INT8U update_time;					//是否准备与服务器同步时间，是=TRUE 否=FALSE
+	INT16U record_number;				//未上传的记录条数(原p0+4)
+	INT8U request_all_rec;
+	INT8U connect_scale;                //是否连接皮带秤
 	//modbus寄存器
 	union _MOD_REG
 	{
-		INT16U reg[16 + 16 + 8 + 2];
+		INT8U reg[ 40 + 16 + 8 + 19];
 		struct _REG_DETAIL
-		{
-	//		INT16U mod_coil[8];		    //继电器
-	//		INT16U mod_input[8];		//DI		
-			INT16U switch_on_delay[8];  //继电器通电时间
-			INT16U switch_interval[8];  //继电器切换时间间隔
-			INT16U mod_inputreg[8];		//输入寄存器--AD
-			INT16U mod_holdingreg[ 8];	//保持寄存器--DA
-			INT16U switch_delay[8];     //继电器延迟开启时间
-			INT16U mod_coil[2];		    //继电器
+		{		
+			INT16U switch_on_delay[4];  //继电器通电时间	8字节
+			INT16U switch_interval[4];  //继电器切换时间	8字节
+			INT16U mod_inputreg[4];		//输入寄存器--AD	8字节
+			INT16U mod_holdingreg[4];	//保持寄存器--DA	8字节
+			INT16U switch_delay[4];     //继电器延迟开启	8字节
+										//
+			INT32U total_weight;        //总的累积量 4字节
+			float  speed;				//速度		 4字节
+			float  flow;				//流量		 4字节
+			float  set_flow;			//设定流量	 4字节
+
+			INT32U today_weight;        //当天的累积量	4字节
+			INT32U month_weight;        //当月的累积量	4字节
+
+			BUS_TIME power_on_time;					//开机时间		7字节
+			BUS_TIME alerm_on_time;					//报警开启时间	7字节
+			INT8U bus_number[3];                	//设备编号  	3字节
+			INT8U line_number[2];					//商户编号		2字节
 		}REG_DETAIL;
 	}MOD_REG;
-
-	AD_TYPE current_h;					//当前厚度
 
 }DEV_STAT;
 
@@ -138,23 +156,15 @@ typedef struct _DEV_STAT
 //交易记录
 typedef struct _RECORD
 {
-	INT8U card_type;						//卡片类型  1字节
-	INT8U card_purchase_type;				//交易类型	1字节
-	INT8U psam_purchase_serial_num[3];		//PSAM卡交易序号3字节
-//  INT8U bus_number[4];					//车号	4字节
-//  INT8U card_serial_number[4];			//发行流水号	8字节
-	INT8U card_number[8];					//发行流水号	8字节
-	INT8U balance[3];						//交易后余额	3字节
-	INT8U fare[3];							//消费金额3字节
-	BUS_TIME card_in_time;					//交易时间	7字节
-	INT8U purchase_serial_num[2];			//初始的卡内交易序号+1	2字节
-	INT8U operator_number[4];				//操作员号	4字节
-
-	INT8U line_number[2];					//线路号	2字节
-	INT8U bus_number[3];					//车号		3字节
-	INT8U driver_number[4];					//驾驶员号	4字节
-	INT8U pos_number[6];					//PSAM卡号	6字节
-	INT8U no_use[1];						//备用		1字节
+	INT8U kind_of_iron;						//矿石类型  		1字节
+	INT8U ratio_of_iron;					//铁含量比例		1字节
+	INT32U weight_of_day;					//当天产量		4字节
+	INT32U weight_of_month;					//当月产量		4字节
+	INT32U weight_of_iron;					//铁粉重量		4字节
+	BUS_TIME power_on_time;					//开机时间		7字节
+	BUS_TIME alerm_on_time;					//报警开启时间		7字节
+	INT8U bus_number[3];                	//设备编号  		3字节
+	INT8U line_number[2];					//商户编号		2字节
 
 	INT8U crc[2];							//crc校验	2字节
 }RECORD;

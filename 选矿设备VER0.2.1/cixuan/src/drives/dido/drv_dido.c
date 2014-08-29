@@ -252,62 +252,62 @@ void SetDO(INT16U do_set, INT8U offset )
 			   IO0SET = BIT28;
 			   OSTimeDlyHMSM(0, 0, temp_Sec, temp_Mil + 1);
 			   break;
-		   case 4:
-			   temp_Sec = DevStat.MOD_REG.REG_DETAIL.switch_on_delay[4]/1000;
-			   temp_Mil = DevStat.MOD_REG.REG_DETAIL.switch_on_delay[4]%1000;
-			   			   if((temp_Sec * 1000 + temp_Mil) <= 10)
-				   break;
-			   IO3CLR = BIT29;
-			   OSTimeDlyHMSM(0, 0, temp_Sec, temp_Mil + 1);
-			   temp_Sec = DevStat.MOD_REG.REG_DETAIL.switch_interval[4]/1000;
-			   temp_Mil = DevStat.MOD_REG.REG_DETAIL.switch_interval[4]%1000;
-			   			   if((temp_Sec * 1000 + temp_Mil) <= 10)
-				   break;
-			   IO3SET = BIT29;
-			   OSTimeDlyHMSM(0, 0, temp_Sec, temp_Mil + 1);
-			   break;
-		   case 5:
-			   temp_Sec = DevStat.MOD_REG.REG_DETAIL.switch_on_delay[5]/1000;
-			   temp_Mil = DevStat.MOD_REG.REG_DETAIL.switch_on_delay[5]%1000;
-			   			   if((temp_Sec * 1000 + temp_Mil) <= 10)
-				   break;
-			   IO3CLR = BIT28;
-			   OSTimeDlyHMSM(0, 0, temp_Sec, temp_Mil + 1);
-			   temp_Sec = DevStat.MOD_REG.REG_DETAIL.switch_interval[5]/1000;
-			   temp_Mil = DevStat.MOD_REG.REG_DETAIL.switch_interval[5]%1000;
-			   			   if((temp_Sec * 1000 + temp_Mil) <= 10)
-				   break;
-			   IO3SET = BIT28;
-			   OSTimeDlyHMSM(0, 0, temp_Sec, temp_Mil + 1);
-			   break;
-		   case 6:
-			   temp_Sec = DevStat.MOD_REG.REG_DETAIL.switch_on_delay[6]/1000;
-			   temp_Mil = DevStat.MOD_REG.REG_DETAIL.switch_on_delay[6]%1000;
-			   	if((temp_Sec * 1000 + temp_Mil) <= 10)
-				   break;
-			   IO0CLR = BIT29;
-			   OSTimeDlyHMSM(0, 0, temp_Sec, temp_Mil + 1);
-			   temp_Sec = DevStat.MOD_REG.REG_DETAIL.switch_interval[6]/1000;
-			   temp_Mil = DevStat.MOD_REG.REG_DETAIL.switch_interval[6]%1000;
-			   	if((temp_Sec * 1000 + temp_Mil) <= 10)
-				   break;
-			   IO0SET = BIT29;
-			   OSTimeDlyHMSM(0, 0, temp_Sec, temp_Mil + 1);
-			   break;
-		   case 7:
-			   temp_Sec = DevStat.MOD_REG.REG_DETAIL.switch_on_delay[7]/1000;
-			   temp_Mil = DevStat.MOD_REG.REG_DETAIL.switch_on_delay[7]%1000;
-			   if((temp_Sec * 1000 + temp_Mil) <= 10)
-				   break;
-			   IO0CLR = BIT30;
-			   OSTimeDlyHMSM(0, 0, temp_Sec, temp_Mil + 1);
-			   temp_Sec = DevStat.MOD_REG.REG_DETAIL.switch_interval[7]/1000;
-			   temp_Mil = DevStat.MOD_REG.REG_DETAIL.switch_interval[7]%1000;
-			   	if((temp_Sec * 1000 + temp_Mil) <= 10)
-				   break;
-			   IO0SET = BIT30;
-			   OSTimeDlyHMSM(0, 0, temp_Sec, temp_Mil + 1);
-			   break;
+//  	   case 4:
+//  		   temp_Sec = DevStat.MOD_REG.REG_DETAIL.switch_on_delay[4]/1000;
+//  		   temp_Mil = DevStat.MOD_REG.REG_DETAIL.switch_on_delay[4]%1000;
+//  		   			   if((temp_Sec * 1000 + temp_Mil) <= 10)
+//  			   break;
+//  		   IO3CLR = BIT29;
+//  		   OSTimeDlyHMSM(0, 0, temp_Sec, temp_Mil + 1);
+//  		   temp_Sec = DevStat.MOD_REG.REG_DETAIL.switch_interval[4]/1000;
+//  		   temp_Mil = DevStat.MOD_REG.REG_DETAIL.switch_interval[4]%1000;
+//  		   			   if((temp_Sec * 1000 + temp_Mil) <= 10)
+//  			   break;
+//  		   IO3SET = BIT29;
+//  		   OSTimeDlyHMSM(0, 0, temp_Sec, temp_Mil + 1);
+//  		   break;
+//  	   case 5:
+//  		   temp_Sec = DevStat.MOD_REG.REG_DETAIL.switch_on_delay[5]/1000;
+//  		   temp_Mil = DevStat.MOD_REG.REG_DETAIL.switch_on_delay[5]%1000;
+//  		   			   if((temp_Sec * 1000 + temp_Mil) <= 10)
+//  			   break;
+//  		   IO3CLR = BIT28;
+//  		   OSTimeDlyHMSM(0, 0, temp_Sec, temp_Mil + 1);
+//  		   temp_Sec = DevStat.MOD_REG.REG_DETAIL.switch_interval[5]/1000;
+//  		   temp_Mil = DevStat.MOD_REG.REG_DETAIL.switch_interval[5]%1000;
+//  		   			   if((temp_Sec * 1000 + temp_Mil) <= 10)
+//  			   break;
+//  		   IO3SET = BIT28;
+//  		   OSTimeDlyHMSM(0, 0, temp_Sec, temp_Mil + 1);
+//  		   break;
+//  	   case 6:
+//  		   temp_Sec = DevStat.MOD_REG.REG_DETAIL.switch_on_delay[6]/1000;
+//  		   temp_Mil = DevStat.MOD_REG.REG_DETAIL.switch_on_delay[6]%1000;
+//  		   	if((temp_Sec * 1000 + temp_Mil) <= 10)
+//  			   break;
+//  		   IO0CLR = BIT29;
+//  		   OSTimeDlyHMSM(0, 0, temp_Sec, temp_Mil + 1);
+//  		   temp_Sec = DevStat.MOD_REG.REG_DETAIL.switch_interval[6]/1000;
+//  		   temp_Mil = DevStat.MOD_REG.REG_DETAIL.switch_interval[6]%1000;
+//  		   	if((temp_Sec * 1000 + temp_Mil) <= 10)
+//  			   break;
+//  		   IO0SET = BIT29;
+//  		   OSTimeDlyHMSM(0, 0, temp_Sec, temp_Mil + 1);
+//  		   break;
+//  	   case 7:
+//  		   temp_Sec = DevStat.MOD_REG.REG_DETAIL.switch_on_delay[7]/1000;
+//  		   temp_Mil = DevStat.MOD_REG.REG_DETAIL.switch_on_delay[7]%1000;
+//  		   if((temp_Sec * 1000 + temp_Mil) <= 10)
+//  			   break;
+//  		   IO0CLR = BIT30;
+//  		   OSTimeDlyHMSM(0, 0, temp_Sec, temp_Mil + 1);
+//  		   temp_Sec = DevStat.MOD_REG.REG_DETAIL.switch_interval[7]/1000;
+//  		   temp_Mil = DevStat.MOD_REG.REG_DETAIL.switch_interval[7]%1000;
+//  		   	if((temp_Sec * 1000 + temp_Mil) <= 10)
+//  			   break;
+//  		   IO0SET = BIT30;
+//  		   OSTimeDlyHMSM(0, 0, temp_Sec, temp_Mil + 1);
+//  		   break;
 		   default:
 			   break;
 		}	

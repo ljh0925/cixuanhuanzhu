@@ -32,11 +32,15 @@ typedef struct _GPRS
 	INT16U record_base_ptr;                 //未上传记录指针起始指针(原p0+2)
 	INT16U record_number;                   //未上传的记录条数(原p0+4)
 
+	INT8U line_number[2];                   //商户号
+	INT8U bus_number[3];					//设备编号	
+
 	BUS_TIME last_commu_time;               //上次通讯时间
 	INT8U have_driver_rec;                  //是否是司机上下班记录
 	INT16U snd_len;                         //发送长度
 	INT16U rcv_len;                         //接收长度
-
+    INT16U package_num;
+    INT16U last_packgae_rec_num;
 
 	INT8U driver_rec_num_temp;              //司机上下班记录条数 临时
 	INT8U driver_rec_num;                   //司机上下班记录条数
@@ -59,9 +63,6 @@ typedef struct _GPRS
 
 GPRS gprs;
 
-static INT8U g_pack_num = 0;				//包号
-static INT8U g_turn_bit = 0;				//交替位
-static INT8U g_retx = 0;					//是否为重发
 
 INT8U g_tmp_tbuf[300];
 INT8U g_tmp_tbuf2[100];
@@ -100,915 +101,329 @@ GPRS_ERR gprs_err;
 void Task_Com1(void *data)
 {
 	INT16U k = 0;
+	//  INT8U num;
 	INT8U err = 0;
-	BUS_TIME ltime;
-//  BUS_TIME last_time;
-    RECORD rec;
+	BUS_TIME time;
+//	BUS_TIME last_time;
+	INT8U rec[REC_LEN + 2];
 	INT8U i = 0;
 	INT16U j = 0;
-//  INT32S time_last;
-//  INT32S time_cur;
-//  INT16U trans_times = 0;
-//  INT16U last_package_black_num = 0;
-//  INT16U comm_retry = 0;
-//  INT8U black_rec[4];
-//  INT16U m = 0;
-    INT16U crc = 0;
+	INT16U rcv_len = 0;
+	INT8U dispbuf[30];
+//	INT32S time_last;
+//	INT32S time_cur;
+//
+//	INT16U trans_times = 0;
+//	INT16U last_package_black_num = 0;
+//	INT16U comm_retry = 0;
+//	INT8U black_rec[4];
+//	INT16U m = 0;
+//	INT16U crc = 0;
 
-
-#define BLACK_NUM_PER_PACK	32
-#define REC_NUM_PER_PACK	2			//每包2条记录
+#define REC_NUM_PER_PACK	10			//每包4条记录
 #define COMM_RETRY_TIMES	1			//通讯时候重试次数
 
 	data = data;
-
-	//  OSTaskSuspend(TASK4_PRIO);				//挂起task_com1_shell
 
 	UART1SetBPS(9600, NONE);
 
 	gprs.driver_rec_num_temp = 0;
 	gprs.driver_rec_num = 0;
 	gprs.driver_rec_ptr = 0;
-	gprs_err.comm_break = FALSE;
+//	gprs_err.comm_break = FALSE;
 
 
-	g_pack_num = 0;				//包号
-	g_turn_bit = 0;				//交替位
-	g_retx = 0;					//是否为重发
+//	g_pack_num = 0;				//包号
+//	g_turn_bit = 0;				//交替位
+//	g_retx = 0;					//是否为重发
 
-	//  com1_send_hex((void *)"12345", 5);
-//  goto update_blacklist;
-	//debug
-
-//  memcpy((void *)g_tmp_tbuf, "\x04\x03\x13", 3);
-//  g_pack_num++;
-//  g_tmp_tbuf[3] = g_pack_num;
-//
-//  g_tmp_tbuf[4] = (INT8U)((k * BLACK_NUM_PER_PACK) / 0x100);
-//  g_tmp_tbuf[5] = (INT8U)((k * BLACK_NUM_PER_PACK) % 0x100);
-//  g_tmp_tbuf[6] = (INT8U)(BLACK_NUM_PER_PACK / 0x100);
-//  g_tmp_tbuf[7] = (INT8U)(BLACK_NUM_PER_PACK % 0x100);
-//
-//  g_retx = FALSE;
-//
-//  gprs.snd_len = 4 + 4;
-//  form_comm_package(g_tmp_tbuf, &gprs.snd_len);
-
-//  UART1SetBPS(57600, NONE);
-
-//    sprintf((void *)Com1SndBuf, "black name version: %02X%02X%02X%02X%02X%02X%02X\n\r",
-//            DevStat.black_name_version[0],
-//            DevStat.black_name_version[1],
-//            DevStat.black_name_version[2],
-//            DevStat.black_name_version[3],
-//            DevStat.black_name_version[4],
-//            DevStat.black_name_version[5],
-//            DevStat.black_name_version[6] );
-//    com1_send_hex(Com1SndBuf, strlen((char *)Com1SndBuf));
-//
-//    sprintf((void *)Com1SndBuf, "black updated time: %02X%02X%02X%02X%02X%02X%02X\n\r",
-//            DevStat.update_black_time.century,
-//            DevStat.update_black_time.year,
-//            DevStat.update_black_time.month,
-//            DevStat.update_black_time.day,
-//            DevStat.update_black_time.hour,
-//            DevStat.update_black_time.minute,
-//            DevStat.update_black_time.second );
-//    com1_send_hex(Com1SndBuf, strlen((char *)Com1SndBuf));
-//
-//    sprintf( (void *)Com1SndBuf, "blacklist amount=%d\n\r", DevStat.black_name_number );
-//    com1_send_hex(Com1SndBuf, strlen((char *)Com1SndBuf));
-//
-////  black = 1;
-////  sprintf((void *)Com1SndBuf, "%08X ", black);
-////  com1_send_hex(Com1SndBuf, strlen((char *)Com1SndBuf));
-////
-////  black = 0x100;
-////  sprintf((void *)Com1SndBuf, "%08X ", black);
-////  com1_send_hex(Com1SndBuf, strlen((char *)Com1SndBuf));
-////
-////  black = 0x10000;
-////  sprintf((void *)Com1SndBuf, "%08X ", black);
-////  com1_send_hex(Com1SndBuf, strlen((char *)Com1SndBuf));
-//
-//    for(k=0; k<DevStat.black_name_number; k++)
-//    {
-//        GetBlackName(&black, k);
-//        sprintf((void *)Com1SndBuf, "%08X", black);
-//        com1_send_hex(Com1SndBuf, strlen((char *)Com1SndBuf));
-//        SleepMs2(500);
-//    }
-
-	//debug end
-
-
-	for ( ;; )
+	for (;;)
 	{
-//com1_start:
-		//  	OSTimeDlyHMSM(0, 0, 10, 0);
-		OSTimeDlyHMSM(0, 0, 10, 0);
+		OSTimeDlyHMSM(0, 5, 0, 0);			//五分钟一次
 
-		////////////////////////////////////////////////////
-		//有司机记录先传司机记录
-		////////////////////////////////////////////////////
-		OSSemPend(gprs_sem, 0, &err);
-		gprs.have_drec = DevStat.have_drec;
-		memcpy((void *)&gprs.drec[0], (void *)&DevStat.drec[0], sizeof(DevStat.drec));
-		(void)OSSemPost(gprs_sem);
-
-		if ( gprs.have_drec == TRUE )
-		{
-			memcpy((void *)g_tmp_tbuf, "\x04\x02\x00\x00", 4);
-			memcpy((void *)&g_tmp_tbuf[4], (void *)&gprs.drec[0], 20);
-			g_retx = FALSE;
-//  		gprs.snd_len = 4 + 20;
-//  		form_comm_package(g_tmp_tbuf, &gprs.snd_len);
-
-
-			//开始通讯
-			for ( j = 0; j < COMM_RETRY_TIMES; j++ )
-			{
-				gprs.snd_len = 4 + 20;
-				form_comm_package(g_tmp_tbuf, &gprs.snd_len);
-
-				CleanCom1Buf();
-				com1_send_hex(Com1SndBuf, gprs.snd_len);
-				i = com1_gets(Com1RcvBuf, &gprs.rcv_len, 3000, 10);
-				if ( i == ok )
-				{
-					break;
-				}
-
-				g_retx = TRUE;
-			}
-			if ( j >= COMM_RETRY_TIMES )
-			{
-				continue;
-			}
-
-//  		i = com1_gets(Com1RcvBuf, &gprs.rcv_len, 30000, 10);
-//  		if ( i == ok && Com1RcvBuf[0] == 0x02 && Com1RcvBuf[2] == 0x00 )
-//  		{
-//  			//do nothing
-//  		}
-//  		else
-//  		{
-//  			continue;
-//  		}
-//
-//  		Com1SndBuf[0] = 0x06;
-//  		Com1SndBuf[1] = Com1RcvBuf[1];
-//  		com1_send_hex(Com1SndBuf, 2);
-
-
-			OSSemPend(gprs_sem, 0, &err);
-			DevStat.have_drec = FALSE;
-			(void)OSSemPost(gprs_sem);
-
-			continue;
-		}
-
-
+//com0_start:
 
 		////////////////////////////////////////////////////
 		//与服务器同步时间
 		////////////////////////////////////////////////////
 		OSSemPend(gprs_sem, 0, &err);
-		gprs.update_time = DevStat.update_time;
+		memcpy((void *)&gprs.bus_number[0], (void *)&DevStat.bus_number[0], sizeof(gprs.bus_number));
+		memcpy((void *)&gprs.line_number[0], (void *)&DevStat.line_number[0], sizeof(gprs.line_number));
 		(void)OSSemPost(gprs_sem);
 
-		if ( gprs.update_time == TRUE )
+		strcpy((void *)Com1SndBuf, "TIME000");
+		i = gprs_snd_and_rcv_protocol1(Com1SndBuf, strlen((void *)Com1SndBuf), (void *)Com1RcvBuf, &rcv_len, 10000, 100);
+		if ( i == ok )
 		{
-
-			memcpy((void *)g_tmp_tbuf, "\x04\x03\x14", 3);
-			g_pack_num++;
-			g_tmp_tbuf[3] = g_pack_num;
-
-			g_retx = FALSE;
-
-
-			//开始通讯
-			for ( j = 0; j < COMM_RETRY_TIMES; j++ )
-			{
-				gprs.snd_len = 4;
-				form_comm_package(g_tmp_tbuf, &gprs.snd_len);
-
-				CleanCom1Buf();
-				com1_send_hex(Com1SndBuf, gprs.snd_len);
-				i = com1_gets(Com1RcvBuf, &gprs.rcv_len, 1000, 10);
-				if ( i == ok )
-				{
-					break;
-				}
-
-				g_retx = TRUE;
-			}
-			if ( j >= COMM_RETRY_TIMES )
-			{
-				continue;
-			}
-
-			i = com1_gets(Com1RcvBuf, &gprs.rcv_len, 10000, 10);
-			if ( i == ok && Com1RcvBuf[0] == 0x02 )
-			{
-				//do nothing
-			}
-			else
-			{
-				continue;
-			}
-
-			Com1SndBuf[0] = 0x06;
-			Com1SndBuf[1] = Com1RcvBuf[1];
-			com1_send_hex(Com1SndBuf, 2);
-
-
-			dle_del(Com1RcvBuf, &gprs.rcv_len);
-
-			if ( Com1RcvBuf[2] == 0x14 && Com1RcvBuf[3] == g_pack_num )
-			{
-				//do nothing
-			}
-			else
-			{
-				continue;
-			}
-
-			crc = Cal_Crc(&Com1RcvBuf[2], 9);
-			if ( (Com1RcvBuf[2 + 9] == (INT8U)(crc >> 8)) && (Com1RcvBuf[2 + 9 + 1] = (INT8U)(crc & 0x00FF)) )
-			{
-				//do nothing
-			}
-			else
-			{
-				continue;
-			}
-
-			ltime.century = 0x20;
-			ltime.year = Com1RcvBuf[5];
-			ltime.month = Com1RcvBuf[6];
-			ltime.day = Com1RcvBuf[7];
-			ltime.hour = Com1RcvBuf[8];
-			ltime.minute = Com1RcvBuf[9];
-			ltime.second = Com1RcvBuf[10];
+			time.century = (ascii_to_hex(Com1RcvBuf[19]) << 4) | ascii_to_hex(Com1RcvBuf[20]);
+			time.year = (ascii_to_hex(Com1RcvBuf[21]) << 4) | ascii_to_hex(Com1RcvBuf[22]);
+			time.month = (ascii_to_hex(Com1RcvBuf[23]) << 4) | ascii_to_hex(Com1RcvBuf[24]);
+			time.day = (ascii_to_hex(Com1RcvBuf[25]) << 4) | ascii_to_hex(Com1RcvBuf[26]);
+			time.hour = (ascii_to_hex(Com1RcvBuf[27]) << 4) | ascii_to_hex(Com1RcvBuf[28]);
+			time.minute = (ascii_to_hex(Com1RcvBuf[29]) << 4) | ascii_to_hex(Com1RcvBuf[30]);
+			time.second = (ascii_to_hex(Com1RcvBuf[31]) << 4) | ascii_to_hex(Com1RcvBuf[32]);
 
 			OSSemPend(gprs_sem, 0, &err);
-			(void)Modify_Time(&ltime);
-			DevStat.update_time = FALSE;
+			Modify_Time(&time);
+			DevStat.gprs_connected = TRUE;
 			(void)OSSemPost(gprs_sem);
 		}
-
-
+		else
+		{
+			OSSemPend(gprs_sem, 0, &err);
+			DevStat.gprs_connected = FALSE;
+			(void)OSSemPost(gprs_sem);
+			continue;
+		}
 
 		////////////////////////////////////////////////////
 		//传输记录
 		////////////////////////////////////////////////////
+
 		OSSemPend(gprs_sem, 0, &err);
-		gprs.record_base_ptr = DevStat.record_base_ptr;
-		gprs.record_number = DevStat.record_number;
-	//	gprs.driver_is_working = DevStat.driver_is_working;
-		if ( gprs.record_number == 0 )
+		if (DevStat.request_all_rec == TRUE)
 		{
-			(void)OSSemPost(gprs_sem);
-			//goto update_blacklist;
-		}
-
-//  	if ( gprs.record_number < REC_NUM_PER_PACK )
-//  	{
-//  		(void)OSSemPost(gprs_sem);
-//  		continue;
-//  	}
-
-		if ( gprs.record_number == 1 )
-		{
-//  		(void)OSSemPost(gprs_sem);
-
-			//如果最后一条是司机卡记录，则上传
-			memcpy((void *)g_tmp_tbuf, "\x04\x03\x11", 3);
-			g_pack_num++;
-			g_tmp_tbuf[3] = g_pack_num;
-
-			gprs.driver_rec_num_temp = 0;
-
-			for ( k = 0; k < 1; k++ )
+			gprs.record_base_ptr = 0;
+			ReadParamRecNum();
 			{
-				Get_Record((INT8U *)&rec, gprs.record_base_ptr, k);
-				memcpy(&g_tmp_tbuf[4 + k * REC_LEN], &rec, REC_LEN);
+				gprs.record_number = DevStat.record_base_ptr + DevStat.record_number;   //正常补采时的记录起始指针和条数
 			}
-			(void)OSSemPost(gprs_sem);
-
-			crc = Cal_Crc(&g_tmp_tbuf[2], 2 + (1 * REC_LEN));
-			g_tmp_tbuf[4 + (1 * REC_LEN)] = (INT8U)(crc >> 8);
-			g_tmp_tbuf[4 + (1 * REC_LEN) + 1] = (INT8U)(crc & 0x00FF);
-
-			g_retx = FALSE;
-
-//  		if (rec.card_type == CARDT_DRIVER)
-			if (gprs.driver_is_working != TRUE)					//下班状态下有1条记录也传
-			{
-				//开始通讯
-				for ( j = 0; j < COMM_RETRY_TIMES; j++ )
-				{
-					gprs.snd_len = 4 + (1 * REC_LEN) + 2;
-					form_comm_package(g_tmp_tbuf, &gprs.snd_len);
-
-					CleanCom1Buf();
-					com1_send_hex(Com1SndBuf, gprs.snd_len);
-					i = com1_gets(Com1RcvBuf, &gprs.rcv_len, 1000, 10);
-					if ( i == ok )
-					{
-						break;
-					}
-
-					g_retx = TRUE;
-				}
-				if ( j >= COMM_RETRY_TIMES )
-				{
-					continue;
-				}
-
-				i = com1_gets(Com1RcvBuf, &gprs.rcv_len, 10000, 10);
-		//  	if ( i == ok && Com1RcvBuf[0] == 0x02 && Com1RcvBuf[2] == 0x00 )
-				if ( i == ok && Com1RcvBuf[0] == 0x02 )
-				{
-					//do nothing
-				}
-				else
-				{
-					continue;
-				}
-
-				Com1SndBuf[0] = 0x06;
-				Com1SndBuf[1] = Com1RcvBuf[1];
-				com1_send_hex(Com1SndBuf, 2);
-
-				dle_del(Com1RcvBuf, &gprs.rcv_len);
-
-				if ( Com1RcvBuf[2] == 0x11 && Com1RcvBuf[3] == g_pack_num && Com1RcvBuf[4] == 0x00 )
-				{
-					//do nothing
-				}
-				else
-				{
-					continue;
-				}
-
-
-				//保存记录指针
-				gprs.driver_rec_num = gprs.driver_rec_num_temp;
-				gprs.driver_rec_num_temp = 0;
-
-				OSSemPend(gprs_sem, 0, &err);
-
-				DevStat.record_base_ptr += 1;                   //调整、储存正常采记录指针
-				if ( DevStat.record_base_ptr >= (INT16U)MAX_REC_NUM )
-				{
-					DevStat.record_base_ptr %= (INT16U)MAX_REC_NUM;
-				}
-				DevStat.record_number -= 1;
-
-				WriteParam();
-				//WriteParamRecNum();
-
-				(void)OSSemPost(gprs_sem);
-
-			}
-
 		}
 		else
 		{
-			memcpy((void *)g_tmp_tbuf, "\x04\x03\x11", 3);
-			g_pack_num++;
-			g_tmp_tbuf[3] = g_pack_num;
+			gprs.record_base_ptr = DevStat.record_base_ptr;
+			ReadParamRecNum();
+			gprs.record_number = DevStat.record_number;
+		}
+  		(void)OSSemPost(gprs_sem);
 
-			gprs.driver_rec_num_temp = 0;
+		if ( gprs.record_number == 0 )
+		{
+			continue;
+		}
 
-			for ( k = 0; k < REC_NUM_PER_PACK; k++ )
-			{
-				Get_Record((INT8U *)&rec, gprs.record_base_ptr, k);
-				memcpy(&g_tmp_tbuf[4 + k * REC_LEN], &rec, REC_LEN);
-			}
-			(void)OSSemPost(gprs_sem);
+		Get_Time(&time);
 
-			crc = Cal_Crc(&g_tmp_tbuf[2], 2 + (REC_NUM_PER_PACK * REC_LEN));
-			g_tmp_tbuf[4 + (REC_NUM_PER_PACK * REC_LEN)] = (INT8U)(crc >> 8);
-			g_tmp_tbuf[4 + (REC_NUM_PER_PACK * REC_LEN) + 1] = (INT8U)(crc & 0x00FF);
+		gprs.package_num = gprs.record_number / REC_NUM_PER_PACK;				//包数
+		gprs.last_packgae_rec_num = gprs.record_number % REC_NUM_PER_PACK;		//剩余条数
 
-			g_retx = FALSE;
-	//  	gprs.snd_len = 4 + (REC_NUM_PER_PACK * REC_LEN) + 2;
-	//  	form_comm_package(g_tmp_tbuf, &gprs.snd_len);
+		for(j=0; j<gprs.package_num; j++)
+		{
+			sprintf((char *)Com1SndBuf, "UPDD%03d%02x%02x%02x%02x%02x", 
+					(REC_LEN * REC_NUM_PER_PACK + 22), 
+					gprs.line_number[0], gprs.line_number[1],
+					gprs.bus_number[0], gprs.bus_number[1], gprs.bus_number[2]);
+			sprintf((char *)&Com1SndBuf[17], "%02x%02x%02x%02x%02x%02x", time.year, time.month,
+				time.day, time.hour, time.minute, time.second);
 
-
-			//开始通讯
-			for ( j = 0; j < COMM_RETRY_TIMES; j++ )
-			{
-				gprs.snd_len = 4 + (REC_NUM_PER_PACK * REC_LEN) + 2;
-				form_comm_package(g_tmp_tbuf, &gprs.snd_len);
-
-				CleanCom1Buf();
-				com1_send_hex(Com1SndBuf, gprs.snd_len);
-				i = com1_gets(Com1RcvBuf, &gprs.rcv_len, 1000, 10);
-				if ( i == ok )
-				{
-	//  			//debug
-	//  			lcddisp(0, 0, "                ");
-	//  			memset(disbuf, 0x00, sizeof(disbuf));
-	//  			htoa(disbuf, Com1RcvBuf, gprs.rcv_len);
-	//  			lcddisp(0, 0, disbuf);
-	//  			lcddisp(1, 0, "                ");
-	//  			sprintf(disbuf, "len=%d", gprs.rcv_len);
-	//  			lcddisp(1, 0, disbuf);
-	//  			SleepMs2(5000);
-	//  			lcddisp(0, 0, "                ");
-	//  			lcddisp(1, 0, "                ");
-	//  			//debug end
-					break;
-				}
-
-				g_retx = TRUE;
-			}
-			if ( j >= COMM_RETRY_TIMES )
-			{
-				continue;
+			for( k = 0; k < REC_NUM_PER_PACK; k++)
+			{						
+				OSSemPend(gprs_sem, 0, &err);
+				Get_Record((INT8U *)&rec, gprs.record_base_ptr, (j * REC_NUM_PER_PACK) + k);	
+				(void)OSSemPost(gprs_sem);
+				memcpy(&Com1SndBuf[7 + 22 + k * REC_LEN], (INT8U *)&rec, REC_LEN);	
 			}
 
-			i = com1_gets(Com1RcvBuf, &gprs.rcv_len, 10000, 10);
-	//  	if ( i == ok && Com1RcvBuf[0] == 0x02 && Com1RcvBuf[2] == 0x00 )
-			if ( i == ok && Com1RcvBuf[0] == 0x02 )
+			i = gprs_snd_and_rcv_protocol1(Com1SndBuf, 7 + 22 + REC_NUM_PER_PACK * REC_LEN, (void *)Com1RcvBuf, &rcv_len, 10000, 100);
+			if ( i == ok )
 			{
 				//do nothing
 			}
 			else
 			{
+				OSSemPend(gprs_sem, 0, &err);
+//  			if(DevStat.request_all_rec == FALSE)
+//  			{
+//  				sprintf((void *)dispbuf, "消费:%d-%d OFF    ", DevStat.consume_cnt, DevStat.record_number);
+//  				lcddisp(0, 0, dispbuf);
+//  			}
+				DevStat.gprs_connected = FALSE;
+				(void)OSSemPost(gprs_sem);
+
 				continue;
 			}
-
-			Com1SndBuf[0] = 0x06;
-			Com1SndBuf[1] = Com1RcvBuf[1];
-			com1_send_hex(Com1SndBuf, 2);
-
-			dle_del(Com1RcvBuf, &gprs.rcv_len);
-
-			if ( Com1RcvBuf[2] == 0x11 && Com1RcvBuf[3] == g_pack_num && Com1RcvBuf[4] == 0x00 )
-			{
-				//do nothing
-			}
-			else
-			{
-				continue;
-			}
-
-
-			//保存记录指针
-			gprs.driver_rec_num = gprs.driver_rec_num_temp;
-			gprs.driver_rec_num_temp = 0;
-
-			OSSemPend(gprs_sem, 0, &err);
-
-			DevStat.record_base_ptr += REC_NUM_PER_PACK;                   //调整、储存正常采记录指针
-			if ( DevStat.record_base_ptr >= (INT16U)MAX_REC_NUM )
-			{
-				DevStat.record_base_ptr %= (INT16U)MAX_REC_NUM;
-			}
-			DevStat.record_number -= REC_NUM_PER_PACK;
-
-			WriteParam();
-			//WriteParamRecNum();
-
-			(void)OSSemPost(gprs_sem);
-
 
 		}
 
+		//剩余记录打一个包
+		if ( gprs.last_packgae_rec_num > 0 )
+		{
 
+			sprintf((char *)Com1SndBuf, "UPDD%03d%02x%02x%02x%02x%02x", 
+					(REC_LEN * gprs.last_packgae_rec_num + 22), 
+					gprs.line_number[0], gprs.line_number[1],
+					gprs.bus_number[0], gprs.bus_number[1], gprs.bus_number[2]);
+			sprintf((char *)&Com1SndBuf[17], "%02x%02x%02x%02x%02x%02x", time.year, time.month,
+				time.day, time.hour, time.minute, time.second);
 
-//
-//update_blacklist:
-//        ////////////////////////////////////////////////////
-//        //判断黑名单
-//        ////////////////////////////////////////////////////
-//        Get_Time(&ltime);
-//        OSSemPend(gprs_sem, 0, &err);
-//        //memcpy((void *)&last_time, (void *)&DevStat.update_black_time, 7);
-//        (void)OSSemPost(gprs_sem);
-//
-//        //time_cur = cal_sec(&ltime);
-//        //time_last = cal_sec(&last_time);
-//        if ( (time_cur - time_last >= (INT32S)(24 * 60 * 60)) || (time_last - time_cur >= (INT32S)(24 * 60 * 60)) )   //超过1天没传黑名单
-////  	if ( 0 )   //超过1天没传黑名单
-//        {
-//            //传输黑名单流程，先请求黑名单版本号和条数
-//            memcpy((void *)g_tmp_tbuf, "\x04\x03\x12", 3);
-//            g_pack_num++;
-//            g_tmp_tbuf[3] = g_pack_num;
-//
-//            g_retx = FALSE;
-//
-////  		//add for debug
-////  		gprs.snd_len = 4;
-////  		form_comm_package(g_tmp_tbuf, &gprs.snd_len);
-////  		com1_send_hex(Com1SndBuf, gprs.snd_len);
-////  		com1puts("\xFF\xFF\xFF\xFF");
-////
-////  		gprs.black_num = 5000;
-////  		//debug end
-//
-//            //开始通讯
-//            for ( j = 0; j < COMM_RETRY_TIMES; j++ )
-//            {
-//                gprs.snd_len = 4;
-//                form_comm_package(g_tmp_tbuf, &gprs.snd_len);
-//
-//                CleanCom1Buf();
-//                com1_send_hex(Com1SndBuf, gprs.snd_len);
-//                i = com1_gets(Com1RcvBuf, &gprs.rcv_len, 1000, 10);
-//                if ( i == ok )
-//                {
-//                    break;
-//                }
-//
-//                g_retx = TRUE;
-//            }
-//            if ( j >= COMM_RETRY_TIMES )
-//            {
-//                continue;
-//            }
-//
-//            i = com1_gets(Com1RcvBuf, &gprs.rcv_len, 10000, 10);
-//            if ( i == ok && Com1RcvBuf[0] == 0x02 )
-//            {
-//                //do nothing
-//            }
-//            else
-//            {
-//                continue;
-//            }
-//
-//            Com1SndBuf[0] = 0x06;
-//            Com1SndBuf[1] = Com1RcvBuf[1];
-//            com1_send_hex(Com1SndBuf, 2);
-//
-//
-//            dle_del(Com1RcvBuf, &gprs.rcv_len);
-//
-//            if ( Com1RcvBuf[2] == 0x12 && Com1RcvBuf[3] == g_pack_num )
-//            {
-//                //do nothing
-//            }
-//            else
-//            {
-//                continue;
-//            }
-//
-//            crc = Cal_Crc(&Com1RcvBuf[2], 11);
-//            if ( (Com1RcvBuf[2 + 11] == (INT8U)(crc >> 8)) && (Com1RcvBuf[2 + 11 + 1] = (INT8U)(crc & 0x00FF)) )
-//            {
-//                //do nothing
-//            }
-//            else
-//            {
-//                continue;
-//            }
-//
-//            memcpy(&gprs.black_name_version[0], &Com1RcvBuf[4], 7);
-//            gprs.black_num = (INT16U)Com1RcvBuf[11] * 0x100 + (INT16U)Com1RcvBuf[12];
-//
-//
-//            //传输黑名单流程，开始传输黑名单
-//            gprs.black_ptr = 0;
-//
-//            if ( gprs.black_num % BLACK_NUM_PER_PACK == 0 )
-//            {
-//                trans_times = gprs.black_num / BLACK_NUM_PER_PACK;
-//            }
-//            else
-//            {
-//                trans_times = (gprs.black_num / BLACK_NUM_PER_PACK) + 1;
-//            }
-//
-//
-//            //传输中断判断
-//            if ( gprs_err.comm_break == TRUE )
-//            {
-//                gprs.black_ptr = gprs_err.black_ptr;
-//                k = gprs_err.black_ptr / BLACK_NUM_PER_PACK;                //继续传输黑名单
-//            }
-//            else
-//            {
-//                k = 0;                                                      //重头开始传输黑名单
-//            }
-//
-//
-//
-////  		for ( k = 0; k < trans_times; k++ )
-//            for ( ; k < trans_times; k++ )
-//            {
-//                if ( k == trans_times - 1 )               //最后一包
-//                {
-//                    if ( gprs.black_num % BLACK_NUM_PER_PACK == 0 )
-//                    {
-//                        last_package_black_num = BLACK_NUM_PER_PACK;
-//                    }
-//                    else
-//                    {
-//                        last_package_black_num = gprs.black_num % BLACK_NUM_PER_PACK;
-//                    }
-//
-//
-//                    memcpy((void *)g_tmp_tbuf, "\x04\x03\x13", 3);
-//                    g_pack_num++;
-//                    g_tmp_tbuf[3] = g_pack_num;
-//
-//                    g_tmp_tbuf[4] = (INT8U)((k * (INT16U)BLACK_NUM_PER_PACK) / 0x100);
-//                    g_tmp_tbuf[5] = (INT8U)((k * (INT16U)BLACK_NUM_PER_PACK) % 0x100);
-//                    g_tmp_tbuf[6] = (INT8U)(last_package_black_num / 0x100);
-//                    g_tmp_tbuf[7] = (INT8U)(last_package_black_num % 0x100);
-//
-//                    g_retx = FALSE;
-//
-//                    //开始通讯
-//                    for ( comm_retry = 0; comm_retry < 10; comm_retry++ )
-//                    {
-////  					if ( (comm_retry % 10 == 0) && (comm_retry != 0) )
-////  					{
-////  						SleepMs2(20000);
-////  						CleanCom1Buf();
-////  						(void)com1_gets(Com1RcvBuf, &gprs.rcv_len, 1000, 10);
-////  					}
-//
-//                        for ( j = 0; j < COMM_RETRY_TIMES; j++ )
-//                        {
-//                            gprs.snd_len = 4 + 4;
-//                            form_comm_package(g_tmp_tbuf, &gprs.snd_len);
-//
-//                            CleanCom1Buf();
-//                            com1_send_hex(Com1SndBuf, gprs.snd_len);
-//                            i = com1_gets(Com1RcvBuf, &gprs.rcv_len, 1000, 10);
-//                            if ( i == ok )
-//                            {
-//                                break;
-//                            }
-//
-//                            g_retx = TRUE;
-//                        }
-//                        if ( j >= COMM_RETRY_TIMES )
-//                        {
-//                            SleepMs2(5000);
-//                            continue;
-//                        }
-//
-//                        i = com1_gets(Com1RcvBuf, &gprs.rcv_len, 10000, 10);
-//                        if ( i == ok && Com1RcvBuf[0] == 0x02 )
-//                        {
-//                            //do nothing
-//                        }
-//                        else
-//                        {
-//                            SleepMs2(5000);
-//                            continue;
-//                        }
-//
-//                        Com1SndBuf[0] = 0x06;
-//                        Com1SndBuf[1] = Com1RcvBuf[1];
-//                        com1_send_hex(Com1SndBuf, 2);
-//
-//                        dle_del(Com1RcvBuf, &gprs.rcv_len);
-//
-//                        if ( gprs.rcv_len < last_package_black_num * 4 + 2)
-//                        {
-//                            SleepMs2(5000);
-//                            continue;       //长度不对
-//                        }
-//
-//                        if ( Com1RcvBuf[2] == 0x13 && Com1RcvBuf[3] == g_pack_num )
-//                        {
-//                            //do nothing
-//                        }
-//                        else
-//                        {
-//                            SleepMs2(5000);
-//                            continue;
-//                        }
-//
-//                        crc = Cal_Crc(&Com1RcvBuf[2], last_package_black_num * 4 + 2);
-//                        if ( (Com1RcvBuf[2 + last_package_black_num * 4 + 2] == (INT8U)(crc >> 8))
-//                             && (Com1RcvBuf[2 + last_package_black_num * 4 + 2 + 1] = (INT8U)(crc & 0x00FF)) )
-//                        {
-//                            //do nothing
-//                        }
-//                        else
-//                        {
-//                            SleepMs2(5000);
-//                            continue;
-//                        }
-//
-//
-//                        break;
-//                    }
-//                    if (comm_retry >= 10)
-//                    {
-//                        gprs_err.comm_break = TRUE;
-//                        gprs_err.black_ptr = gprs.black_ptr;
-//                        gprs_err.black_num = gprs.black_num;
-//                        memcpy(&gprs_err.black_name_version[0], &gprs.black_name_version[0], sizeof(gprs_err.black_name_version));
-//
-//                        goto com1_start;            //通讯失败
-//                    }
-//
-//
-//                    for ( j = 0; j < last_package_black_num; j++ )
-//                    {
-//                        black_rec[0] = Com1RcvBuf[4 + j * 4];
-//                        black_rec[1] = Com1RcvBuf[4 + j * 4 + 1];
-//                        black_rec[2] = Com1RcvBuf[4 + j * 4 + 2];
-//                        black_rec[3] = Com1RcvBuf[4 + j * 4 + 3];
-//
-//                        OSSemPend(gprs_sem, 0, &err);
-//                        (void)StoreBlackName2(black_rec, gprs.black_ptr);                    //将黑名单存入NVRAM
-//                        (void)OSSemPost(gprs_sem);
-//
-//                        gprs.black_ptr++;
-//                    }
-//
-//                    //传输完毕，导入正式库
-//                    OSSemPend(gprs_sem, 0, &err);
-//                    for (m = 0; m < gprs.black_ptr; m++)
-//                    {
-//                        GetBlackName2(black_rec, m);
-//                        (void)StoreBlackName(black_rec, m);                    //将黑名单存入NVRAM
-//                    }
-////  				DevStat.black_name_number = gprs.black_ptr;
-//        //          DevStat.black_name_number = gprs.black_num;
-//                //  memcpy((void *)&DevStat.black_name_version[0], (void *)&gprs.black_name_version[0], 7);
-//                    Get_Time(&ltime);
-////					memcpy((void *)&DevStat.update_black_time, (void *)&ltime, 7);
-//
-//                    gprs_err.comm_break = FALSE;
-//
-//                    WriteParam();
-//                    (void)OSSemPost(gprs_sem);
-//
-//                    goto com1_start;
-//
-//                }
-//                else                                            //不是最后一包
-//                {
-//                    memcpy((void *)g_tmp_tbuf, "\x04\x03\x13", 3);
-//                    g_pack_num++;
-//                    g_tmp_tbuf[3] = g_pack_num;
-//
-//                    g_tmp_tbuf[4] = (INT8U)((k * (INT16U)BLACK_NUM_PER_PACK) / 0x100);
-//                    g_tmp_tbuf[5] = (INT8U)((k * (INT16U)BLACK_NUM_PER_PACK) % 0x100);
-//                    g_tmp_tbuf[6] = (INT8U)(BLACK_NUM_PER_PACK / 0x100);
-//                    g_tmp_tbuf[7] = (INT8U)(BLACK_NUM_PER_PACK % 0x100);
-//
-//                    g_retx = FALSE;
+			for( k = 0; k < gprs.last_packgae_rec_num; k++)
+			{	
+				OSSemPend(gprs_sem, 0, &err);
+				if( DevStat.request_all_rec == TRUE )
+				{
+					sprintf((void *)dispbuf, "补采:%d-%d      ", gprs.record_number, k + gprs.package_num * REC_NUM_PER_PACK);
+					lcddisp(0, 0, dispbuf);
+				}	
+				Get_Record((INT8U *)&rec, gprs.record_base_ptr, (gprs.package_num * REC_NUM_PER_PACK) + k);	
+				(void)OSSemPost(gprs_sem);
+				memcpy(&Com1SndBuf[7 + 22 + k * REC_LEN], (INT8U *)&rec, REC_LEN);	
+			}
 
-//  				//add for debug
-//  				gprs.snd_len = 4 + 4;
-//  				form_comm_package(g_tmp_tbuf, &gprs.snd_len);
-//  				com1_send_hex(Com1SndBuf, gprs.snd_len);
-//  				com1puts("\xFF\xFF\xFF\xFF");
-//
-//
-//  				if (gprs_err.comm_break == FALSE)
-//  				{
-//  					if (k == 5)
-//  					{
-//  						gprs_err.comm_break = TRUE;
-//  						gprs_err.black_ptr = gprs.black_ptr;
-//  						gprs_err.black_num = gprs.black_num;
-//  						memcpy(&gprs_err.black_name_version[0], &gprs.black_name_version[0], sizeof(gprs_err.black_name_version));
-//
-//  						goto com1_start;            //通讯失败
-//  					}
-//  				}
-//
-//
-//  				//debug end
+			i = gprs_snd_and_rcv_protocol1(Com1SndBuf, 7 + 22 + gprs.last_packgae_rec_num * REC_LEN, (void *)Com1RcvBuf, &rcv_len, 10000, 100);
+			if ( i == ok )
+			{
+				//do nothing
+			}
+			else
+			{
+				OSSemPend(gprs_sem, 0, &err);
+				if(DevStat.request_all_rec == FALSE)
+				{
+					sprintf((void *)dispbuf, "消费:%d-%d OFF    ", DevStat.consume_cnt, DevStat.record_number);
+					lcddisp(0, 0, dispbuf);
+				}
+				DevStat.gprs_connected = FALSE;
+				(void)OSSemPost(gprs_sem);
 
-					//开始通讯
-//                    for ( comm_retry = 0; comm_retry < 10; comm_retry++ )
-//                    {
-////  					if ( (comm_retry % 10 == 0) && (comm_retry != 0) )
-////  					{
-////  						SleepMs2(20000);
-////  						CleanCom1Buf();
-////  						(void)com1_gets(Com1RcvBuf, &gprs.rcv_len, 1000, 10);
-////  					}
-//
-//                        for ( j = 0; j < COMM_RETRY_TIMES; j++ )
-//                        {
-//                            gprs.snd_len = 4 + 4;
-//                            form_comm_package(g_tmp_tbuf, &gprs.snd_len);
-//
-//                            CleanCom1Buf();
-//                            com1_send_hex(Com1SndBuf, gprs.snd_len);
-//                            i = com1_gets(Com1RcvBuf, &gprs.rcv_len, 1000, 10);
-//                            if ( i == ok )
-//                            {
-//                                break;
-//                            }
-//
-//                            g_retx = TRUE;
-//                        }
-//                        if ( j >= COMM_RETRY_TIMES )
-//                        {
-//                            SleepMs2(5000);
-//                            continue;
-//                        }
-//
-//                        i = com1_gets(Com1RcvBuf, &gprs.rcv_len, 10000, 10);
-//                        if ( i == ok && Com1RcvBuf[0] == 0x02 )
-//                        {
-//                            //do nothing
-//                        }
-//                        else
-//                        {
-//                            SleepMs2(5000);
-//                            continue;
-//                        }
-//
-//                        Com1SndBuf[0] = 0x06;
-//                        Com1SndBuf[1] = Com1RcvBuf[1];
-//                        com1_send_hex(Com1SndBuf, 2);
-//
-//                        dle_del(Com1RcvBuf, &gprs.rcv_len);
-//
-//                        if ( gprs.rcv_len < BLACK_NUM_PER_PACK * 4 + 2)
-//                        {
-//                            SleepMs2(5000);
-//                            continue;       //长度不对
-//                        }
-//
-//                        if ( Com1RcvBuf[2] == 0x13 && Com1RcvBuf[3] == g_pack_num )
-//                        {
-//                            //do nothing
-//                        }
-//                        else
-//                        {
-//                            SleepMs2(5000);
-//                            continue;
-//                        }
-//
-//                        crc = Cal_Crc(&Com1RcvBuf[2], BLACK_NUM_PER_PACK * 4 + 2);
-//                        if ( (Com1RcvBuf[2 + BLACK_NUM_PER_PACK * 4 + 2] == (INT8U)(crc >> 8))
-//                             && (Com1RcvBuf[2 + BLACK_NUM_PER_PACK * 4 + 2 + 1] = (INT8U)(crc & 0x00FF)) )
-//                        {
-//                            //do nothing
-//                        }
-//                        else
-//                        {
-//                            SleepMs2(5000);
-//                            continue;
-//                        }
-//
-//                        break;
-//                    }
-//                    if (comm_retry >= 10)
-//                    {
-////  					//debug
-////  					memset(disbuf, 0x00, sizeof(disbuf));
-////  					lcddisp(0, 0, "                ");
-////  					sprintf(disbuf, "retry=%d", comm_retry);
-////  					lcddisp(0, 0, disbuf);
-////  					lcddisp(1, 0, "err4            ");
-////  					SleepMs2(2000);
-////  					lcddisp(0, 0, "                ");
-////  					lcddisp(1, 0, "                ");
-////  					//debug end
-//                        gprs_err.comm_break = TRUE;
-//                        gprs_err.black_ptr = gprs.black_ptr;
-//                        gprs_err.black_num = gprs.black_num;
-//                        memcpy(&gprs_err.black_name_version[0], &gprs.black_name_version[0], sizeof(gprs_err.black_name_version));
-//
-//                        goto com1_start;            //通讯失败
-//                    }
-//
-//
-//                    for ( j = 0; j < BLACK_NUM_PER_PACK; j++ )
-//                    {
-//                        black_rec[0] = Com1RcvBuf[4 + j * 4];
-//                        black_rec[1] = Com1RcvBuf[4 + j * 4 + 1];
-//                        black_rec[2] = Com1RcvBuf[4 + j * 4 + 2];
-//                        black_rec[3] = Com1RcvBuf[4 + j * 4 + 3];
-//
-//                        OSSemPend(gprs_sem, 0, &err);
-//                        (void)StoreBlackName2(black_rec, gprs.black_ptr);                    //将黑名单存入NVRAM
-//                        (void)OSSemPost(gprs_sem);
-//
-//                        gprs.black_ptr++;
-//                    }
-//
-//                    //显示进度
-//                    memset(disbuf, 0x00, sizeof(disbuf));
-//                    lcddisp(0, 0, "                ");
-//                    sprintf(disbuf, "黑名单%d/%d", BLACK_NUM_PER_PACK * k, gprs.black_num);
-//                    lcddisp(0, 0, disbuf);
-//  			}
-//  		}
-//  	}
+				continue;
+			}
+
+		}
+
+		//////////////////最后结尾函数///////////////////////////
+		sprintf((char *)Com1SndBuf, "UPDE022%02x%02x%02x%02x%02x", 
+				gprs.line_number[0], gprs.line_number[1],
+				gprs.bus_number[0], gprs.bus_number[1], gprs.bus_number[2]);
+		sprintf((char *)&Com1SndBuf[17], "%02x%02x%02x%02x%02x%02x", time.year, time.month,
+			time.day, time.hour, time.minute, time.second);
+
+		i = gprs_snd_and_rcv_protocol1(Com1SndBuf, strlen((void *)Com1SndBuf), (void *)Com1RcvBuf, &rcv_len, 10000, 100);
+		if ( i == ok )
+		{
+			OSSemPend(gprs_sem, 0, &err);
+
+			if (DevStat.request_all_rec == FALSE)
+			{
+				DevStat.record_base_ptr += gprs.record_number;
+				DevStat.record_number -= gprs.record_number;
+				//WriteParamRecNum();
+				WriteParam();
+			}
+			else
+			{
+				DevStat.request_all_rec = FALSE;
+			}
+
+			(void)OSSemPost(gprs_sem);
+		}
+		else
+		{
+			OSSemPend(gprs_sem, 0, &err);
+			if(DevStat.request_all_rec == FALSE)
+			{
+				sprintf((void *)dispbuf, "消费:%d-%d OFF    ", DevStat.consume_cnt, DevStat.record_number);
+				lcddisp(0, 0, dispbuf);
+			}
+			DevStat.gprs_connected = FALSE;
+			(void)OSSemPost(gprs_sem);
+
+			continue;
+		}
+
 	}
+
+}
+
+/*****************************************************************
+函数原型：gprs_snd_and_rcv_protocol0
+功能描述：gprs发送与接收,协议0
+参数描述：
+参数名称：	输入/输出？	类型		描述
+
+返  回  值：ok-成功
+			notok(0xFF)-失败，超时
+
+作      者	：许岩
+日      期：2005-05-19
+修改历史：
+日期		修改人		修改描述
+------		---------	-------------
+*****************************************************************/
+INT8U gprs_snd_and_rcv_protocol1(INT8U *str_to_snd, INT16U snd_len, INT8U *str_rcv, INT16U *rcv_len, INT16U timeout_start, INT16U timeout)
+{
+	INT8U i = 0;
+	INT8U j = 0;
+	INT8U packno2[10];
+
+	DevStat.packno++;
+	if ( DevStat.packno >= 100 )
+		DevStat.packno = 0;
+	sprintf((void *)packno2, "%02d", DevStat.packno);
+
+	CleanCom1Buf();
+
+	gprs_protocol1_add_end(str_to_snd, snd_len);
+
+	for ( i = 0; i <= COMM_RETRY_TIMES; i++ )
+	{
+		//		CleanCom0Buf();
+		com1_send_hex(str_to_snd, snd_len + 20);
+
+		j = com1_gets(str_rcv, rcv_len, timeout_start, timeout);
+		if ( j == ok )
+		{
+			if ( str_rcv[0] != '@' )            //判断开头
+				continue;
+			if ( CRC_Check(str_rcv, *rcv_len) != ok )
+				continue;
+			if ( (str_rcv[19] == 'E' && str_rcv[20] == 'R') )
+				continue;
+			if ( !(str_rcv[6] == packno2[0] && str_rcv[7] == packno2[1]) )      //判断包号
+				continue;
+			return ( ok );
+		}
+
+	}
+	return ( notok );
+}
+
+
+/*****************************************************************
+ 函数原型：gprs_protocol0_add_end
+ 功能描述：按照gprs通讯协议0加上包头包尾，包头包尾一共附带20字节
+ 参数描述：
+ 参数名称：		输入/输出？	类型		描述
+ -----------	-----------	------	   	-------
+ snd_buf		输入		INT8U  * 	发送缓冲区
+ snd_length		输入		INT16U const要发送的长度
+
+ 返 回 值：无
+ 作    者：许岩
+ 日    期：2013-10-22
+ 修改历史：
+ 日期		修改人		修改描述
+ ------		---------	-------------
+*****************************************************************/
+void gprs_protocol1_add_end(INT8U *snd_buf, INT16U const snd_length)
+{
+	INT16U i = 0;
+	INT16U crc;
+	INT8U buf[20];
+
+	memmove(&snd_buf[12], snd_buf, snd_length);         //后移12字节
+//  sprintf((void *)buf, "@START%02X%02X%02X", gprs.line_number[0], gprs.line_number[1], gprs.bus_number[2]);
+	sprintf((void *)buf, "@START%02d%02X%02X", DevStat.packno, gprs.bus_number[1], gprs.bus_number[2]);
+	memcpy(snd_buf, buf, 12);
+
+	i = snd_length;
+
+	crc = Cal_Crc((void *)snd_buf, i + 12);
+	snd_buf[12 + i] = ascii((INT8U)(crc >> 8) >> 4);
+	snd_buf[12 + i + 1] = ascii((INT8U)(crc >> 8) & 0x0F);
+	snd_buf[12 + i + 2] = ascii((INT8U)crc >> 4);
+	snd_buf[12 + i + 3] = ascii((INT8U)crc & 0x0F);
+
+	(void)memcpy((void *)&snd_buf[12 + i + 4], "END\r", 5);
 
 }
 
@@ -1115,41 +530,17 @@ void dle_del(INT8U *buf, INT16U *len)
 ******************************************************************************/
 void form_comm_package(INT8U *buf, INT16U *len)
 {
-	INT8U bcc = 0;
+	INT8U crc = 0;
 	INT16U llen = *len;
+	char	END[10];
 
-	memcpy(Com1SndBuf, buf, llen);
+	memcpy(Com1SndBuf, (INT8U *)buf, llen);
 
-	if (g_turn_bit == 0x00)
-	{
-		Com1SndBuf[0] =( Com1SndBuf[0] & (~BIT0) );
-		g_turn_bit = 0x01;
-	}
-	else
-	{
-		Com1SndBuf[0] |= 0x01;
-		g_turn_bit = 0x00;
-	}
-
-	if (g_retx == TRUE)
-	{
-		Com1SndBuf[0] |= 0x02;
-	}
-	else
-	{
-		Com1SndBuf[0] =( Com1SndBuf[0] & (~BIT1) );
-	}
-
-	bcc = Cal_BCC(Com1SndBuf, llen);
-	Com1SndBuf[llen] = bcc;
-	llen++;
-
-	dle_add(Com1SndBuf, &llen);
-
-	memmove(&Com1SndBuf[1], &Com1SndBuf[0], llen);
-	Com1SndBuf[0] = 0x02;
-	Com1SndBuf[llen + 1] = 0x03;
-	llen += 2;
+	crc = Cal_Crc((unsigned char*)Com1SndBuf, llen);	
+	sprintf(END, (void *)"%02X%02XEND\r", ((crc >> 8)& 0xff), (crc & 0xff));
+	memcpy(Com1SndBuf+llen, END, 8);
+	llen = llen + 8;
+	Com1SndBuf[llen] = '\0';
 
 	*len = llen;
 }

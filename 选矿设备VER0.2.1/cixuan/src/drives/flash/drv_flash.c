@@ -1,39 +1,25 @@
 /******************************************************************************
-			大连金德姆电子有限公司
-			(Copyright 2005)	All rights riserved.
+			大连易达通电子技术有限公司
+	(Copyright 2005)	All rights riserved.
 
 文件名	：drv_flash.c
-项目名称：X射线测厚仪
+项目名称：磁选矿项目
 功能概要：cpu使用philips 的lpc2214 
 			操作系统 uCOS-II
-创建人	：许岩
-创建日期：2005.4.10
+创建人	：刘及华
+创建日期：2014.8.10
 
-
-取代版本：0.0.1
-修改人	：许岩
-完成日期：2005.4.10
-升级说明：第一版
 ******************************************************************************/
 #include "config.h"
 
+#define AT45DB161D_USE_SEM
 
 extern OS_EVENT        *FLASH_Sem;
 
-
-// static const INT8U FORMAT_END_SIGN[4]={0x55,0xaa,0x18,0xe7};
-// static const INT8U END_SIGN[4]={0x18,0xe7,0x18,0xe7};
-
-// extern void Delay_10us(INT16U _times);
-
-//static volatile INT8U  Addr13_18 = 0xFF;					//FLASH高地址A13-A18状态寄存器
 extern volatile DEV_STAT  DevStat;				//设备状态
-//volatile INT8U  OutPortStat;
-//volatile DISP_BUF DispBuf;  //显示缓存从0-7依次对应数码管(从左到右)的：
-//volatile INT8U FErrPage[ERR_MAP_SIZE];		//坏块分配图，可以表示512*8 = 4096页的状态
 
 INT8U PageBuf1[512];
-//static INT8U PageBuf2[512];
+INT8U PageBuf2[512];
 
 /*****************************************************************
 函数原型：Cal_Crc
@@ -209,9 +195,76 @@ void Get_Record(INT8U *l_rec_buf, INT16U start_position, INT16U rec_pointer)
 	page = rec_ptr / (INT16U)REC_PER_PAGE + (INT16U)FADDR_REC;		//算出要存储的记录的页号
 	ptr_in_page = rec_ptr % (INT16U)REC_PER_PAGE;					//算出页内条号
 
-	//FlashPageRead512(page, ptr_in_page * (REC_LEN + 2), l_rec_buf, REC_LEN + 2, 0);
+	FlashReadBytes(page, ptr_in_page * (REC_LEN + 2), l_rec_buf, REC_LEN + 2, 0);
 }
 
+
+/******************************************************************************
+函数名称：FlashReadBytes
+功能描述：读Flash中任意页任意地址的任意长度数据
+参数描述：
+参数名称：	输入/输出？	类型		描述
+page_address	输入 	INT16U 		页地址 
+offset_in_page	输入	INT16U		页内地址
+*source_address	输出	INT8U *		读出来的数据(长度为512)存放地址 
+len				输入	INT16U		要读出的长度 
+which        	输入	INT8U		主FLASH还是从FLASH，0 或 1
+
+作      者：许岩
+日      期：2004-09-02
+修改历史：
+日期		修改人		修改描述
+------		---------	-------------
+******************************************************************************/
+void FlashReadBytes(INT16U page_address, INT16U offset_in_page, INT8U *source_address, INT16U len, INT8U which)
+{
+	INT16U LOCAL_V_TYPE i;     
+	INT8U LOCAL_V_TYPE high_address;
+	INT8U LOCAL_V_TYPE middle_address;
+	INT8U LOCAL_V_TYPE low_address;      
+	INT8U err = 0;
+
+	ToggleWD();
+
+	high_address = (INT8U)(page_address >> 6) & 0x3F;			//取得高位地址		
+	middle_address = (INT8U)(page_address << 2) & 0xFC;		  //取得中位地址		
+	if ( offset_in_page > 512 )
+		offset_in_page %= 512;
+	if ( offset_in_page >= 256 )
+		middle_address |= 1;
+	low_address = offset_in_page % 256;							//取得低位地址		
+
+#ifdef AT45DB161D_USE_SEM
+	OSSemPend(FLASH_Sem, 0, &err);
+#endif
+
+	while ( FlashBusy(which) == TRUE )
+	{
+//		ToggleWD();	// Check Flash Busy
+		;
+	}
+	FLASH_SCK_SetHigh(which);
+	FLASH_CS_SetLow(which);
+
+	Send_SPI_8Bit(CONTINOUS_READ, which);	//发送读命令		
+	Send_SPI_8Bit(high_address, which);     
+	Send_SPI_8Bit(middle_address, which);
+	Send_SPI_8Bit(low_address, which);
+
+	Send_SPI_8Bit(0, which);		//发送空字节		
+	Send_SPI_8Bit(0, which);		//发送空字节		
+	Send_SPI_8Bit(0, which);		//发送空字节		
+	Send_SPI_8Bit(0, which);		//发送空字节			
+	for ( i=0; i<len; i++ )	//开始接收数据放在aim_data_address指向的地址中		
+		*source_address++ = Receive_SPI_8Bit(which);        
+
+	FLASH_CS_SetHigh(which);
+	FLASH_SCK_SetLow(which);
+
+#ifdef AT45DB161D_USE_SEM
+	OSSemPost(FLASH_Sem);
+#endif
+}  
 
 /******************************************************************************
  函数名称：FlashReset
@@ -799,7 +852,7 @@ void FlashPageWrite512(INT16U page_address, const INT8U *source_address, INT8U w
 功能描述：读Flash 中的某一页
 参数描述：
 参数名称：	输入/输出？	类型		描述
-page_address		  输入 				 INT16U 		页地址
+page_address		输入 			INT16U 		页地址
 *source_address		输出			INT8U *		读出来的数据(长度为512)存放地址		
  which        输入        INT8U      主FLASH还是从FLASH，0 或 1
 
@@ -866,16 +919,6 @@ void FlashPageRead512(INT16U page_address,INT8U *source_address, INT8U which)
 ******************************************************************************/
 void WriteParam(void)
 {
-// 	INT8U h = 0;
-//	INT8U i = 0;
-//	INT8U j = 0;
-//  INT8U buf[512];
-//  INT8U buf2[512];
-//  INT8U buf[256];
-//  INT8U buf2[256];
-
-// 	INT16U crc = 0;				//add for debug
-
 	ToggleWD();
 
 	OS_ENTER_CRITICAL();
@@ -910,7 +953,7 @@ void SaveDevState(void)
 {
 	memset(PageBuf1, 0xFF, sizeof(PageBuf1));
 	memcpy(PageBuf1, (void *)&DevStat.start, (&DevStat.end -  &DevStat.start));
-	FlashPageWrite512(10, PageBuf1, 0);
+	FlashPageWrite512(5, PageBuf1, 0);
 }
 
 
@@ -931,7 +974,7 @@ void SaveDevState(void)
 void ReadDevState(void)
 {
 	memset(PageBuf1, 0xFF, sizeof(PageBuf1));
-	FlashPageRead512(10, PageBuf1, 0);
+	FlashPageRead512(5, PageBuf1, 0);
 
 	memcpy((void *)&DevStat.start, PageBuf1, (&DevStat.end -  &DevStat.start));
 	
@@ -952,21 +995,12 @@ void ReadDevState(void)
 ******************************************************************************/
 void ReadParam(void)
 {
-// 	INT8U i = 0;
-// 	INT8U j = 0;
-//  INT8U buf[528];
-//  INT8U buf[256];
-//	INT16U crc = 0;
-
 	ToggleWD();
 
 	OS_ENTER_CRITICAL();
 
 	FlashPageRead512(4, PageBuf1, 0);
 	memcpy((void *)&DevStat.MOD_REG.reg[0], PageBuf1, 512);
-
-//	FlashPageRead512(5, PageBuf1, 0);
-//	memcpy((void *)&DevStat.MOD_REG.reg[256], PageBuf1, 512);
 
 	OS_EXIT_CRITICAL();
 }
@@ -1198,4 +1232,211 @@ void FlashPageRead256(INT16U page_address,INT8U *source_address, INT8U which)
 
 	OSSemPost(FLASH_Sem);
 }  
+
+/******************************************************************************
+ 函数名称：WriteParamRecNum
+ 功能描述：保存参数DevStat.record_number
+ 参数描述：
+ 参数名称： 输入/输出？ 类型        描述
+
+ 返  回  值：无
+
+ 作      者 ：许岩
+ 日      期：2006-08-02
+ 修改历史：
+		日期        修改人      修改描述
+		------      ---------   -------------
+******************************************************************************/
+void WriteParamRecNum(void)
+{
+	volatile INT16U i = 0;
+
+	for(;;)
+	{
+		WriteParamRecNum2();
+		i = ReadParamRecNum3();
+		if (DevStat.record_number == i)
+			break;
+	}
+}
+
+
+/******************************************************************************
+ 函数名称：WriteParamRecNum2
+ 功能描述：保存参数DevStat.record_number
+ 参数描述：
+ 参数名称： 输入/输出？ 类型        描述
+
+ 返  回  值：无
+
+ 作      者 ：许岩
+ 日      期：2006-08-02
+ 修改历史：
+		日期        修改人      修改描述
+		------      ---------   -------------
+******************************************************************************/
+void WriteParamRecNum2(void)
+{
+	INT8U buf2[8];
+	INT16U num = 0;
+
+	ToggleWD();
+
+	FlashPageRead512(FADDR_REC_NUM, PageBuf2, 0);
+
+	for ( num=0; num<170; num++ )
+	{
+		if ( PageBuf2[num * 3] == 0xFF )
+		{
+			break;
+		}
+	}
+
+	buf2[0] = 0x55;
+	buf2[1] = (INT8U)(DevStat.record_number / 256);
+	buf2[2] = (INT8U)(DevStat.record_number % 256);
+
+	if ( num >= 170 )          //此页写满了
+	{
+		memset((void *)PageBuf2, 0xFF, sizeof(PageBuf2));
+		memcpy((void *)PageBuf2, buf2, 3);
+		FlashPageWrite512(FADDR_REC_NUM, PageBuf2, 0);   //擦写
+	}
+	else
+	{
+		FlashWriteWithoutErase(FADDR_REC_NUM, num * 3, buf2, 3, 0);  //不擦写
+	}
+}
+
+/******************************************************************************
+ 函数名称：WriteParamRecNumFirst
+ 功能描述：第一次保存参数DevStat.record_number
+ 参数描述：
+ 参数名称： 输入/输出？ 类型        描述
+
+ 返  回  值：无
+
+ 作      者 ：许岩
+ 日      期：2006-08-02
+ 修改历史：
+		日期        修改人      修改描述
+		------      ---------   -------------
+******************************************************************************/
+void WriteParamRecNumFirst(void)
+{
+	INT8U buf2[8];
+
+	ToggleWD();
+
+	buf2[0] = 0x55;
+	buf2[1] = (INT8U)(DevStat.record_number / 256);
+	buf2[2] = (INT8U)(DevStat.record_number % 256);
+
+	memset((void *)PageBuf2, 0xFF, sizeof(PageBuf2));
+	memcpy((void *)PageBuf2, buf2, 3);
+	FlashPageWrite512(FADDR_REC_NUM, PageBuf2, 0);   //擦写
+}
+
+/******************************************************************************
+ 函数名称：ReadParamRecNum
+ 功能描述：读取参数DevStat.record_number
+ 参数描述：
+ 参数名称： 输入/输出？ 类型        描述
+
+ 返  回  值：无
+
+ 作      者 ：许岩
+ 日      期：2006-08-02
+ 修改历史：
+		日期        修改人      修改描述
+		------      ---------   -------------
+******************************************************************************/
+void ReadParamRecNum(void)
+{
+	volatile INT16U i = 0;
+	volatile INT16U j = 0;
+
+	for(;;)
+	{
+		i = ReadParamRecNum2();
+		j = ReadParamRecNum2();
+		if (i == j)
+			break;
+	}
+
+	DevStat.record_number = i;
+}
+
+/******************************************************************************
+ 函数名称：ReadParamRecNum2
+ 功能描述：读取参数DevStat.record_number
+ 参数描述：
+ 参数名称： 输入/输出？ 类型        描述
+
+ 返  回  值：读取到的DevStat.record_number
+
+ 作      者 ：许岩
+ 日      期：2006-08-02
+ 修改历史：
+		日期        修改人      修改描述
+		------      ---------   -------------
+******************************************************************************/
+INT16U ReadParamRecNum2(void)
+{
+	INT16U num = 0;
+	INT16U rec_num = 0;
+
+	ToggleWD();
+
+	FlashPageRead512(FADDR_REC_NUM, PageBuf2, 0);
+
+	for ( num=0; num<170; num++ )
+	{
+		if ( PageBuf2[num * 3] == 0xFF )
+		{
+			break;
+		}
+	}
+
+	if ( num == 0 )
+	{
+		return 0;                 //格式错误
+	}
+
+	num--;
+	rec_num = (INT16U)PageBuf2[num * 3 + 1] * 256 + (INT16U)PageBuf2[num * 3 + 2];
+
+	return rec_num;
+}
+
+/******************************************************************************
+ 函数名称：ReadParamRecNum3
+ 功能描述：读取参数DevStat.record_number
+ 参数描述：
+ 参数名称： 输入/输出？ 类型        描述
+
+ 返  回  值：读出的record_number
+
+ 作      者 ：许岩
+ 日      期：2006-08-02
+ 修改历史：
+		日期        修改人      修改描述
+		------      ---------   -------------
+******************************************************************************/
+INT16U ReadParamRecNum3(void)
+{
+	volatile INT16U i = 0;
+	volatile INT16U j = 0;
+
+	for(;;)
+	{
+		i = ReadParamRecNum2();
+		j = ReadParamRecNum2();
+		if (i == j)
+			break;
+	}
+
+	return i;
+}
+
 

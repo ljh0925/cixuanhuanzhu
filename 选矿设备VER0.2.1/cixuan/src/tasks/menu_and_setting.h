@@ -12,7 +12,7 @@
 #define     MENU_DISPLAY_START_COL       0       //显示的起始列，从0开始每一列1个点阵
 #define     MENU_MAX_ROW                      4
 //#define     MENU_MAX_ITEM                       40
-#define		MENU_MAX_ITEM				18
+#define		MENU_MAX_ITEM				19
 
 #define		DISPLAY_CENTER				0x01
 #define		DISPLAY_LEFT				0x02
@@ -1009,7 +1009,8 @@ param		输入			INT8U		输入的参数
 ------		---------	-------------
 *****************************************************************/
 void SetPassWord(INT8U param);
-
+void Setlinenumber(INT8U param);
+void Setbusnumber(INT8U param);
 /*****************************************************************
 函数原型：SetDefault
 功能描述：使能AGC

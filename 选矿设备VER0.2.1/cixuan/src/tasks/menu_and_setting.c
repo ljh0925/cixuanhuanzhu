@@ -11,8 +11,8 @@ struct MENU mu[MENU_MAX_ITEM] =
 	//                	    next		pre			parent		child 		exec			param	enter_child_hook	hook_param
 	{ "1.工作状态",     0,  &mu[1],     NULL,       NULL,       &mu[14],    NULL,           0,      NULL,               NULL,},	//0
 	{ "2.数据查询",     0,  &mu[2],     &mu[0],     NULL,       &mu[6],		NULL,           0,      NULL,               NULL,},	//1
-	{ "3.参数设置",     0,  &mu[3],     &mu[1],     NULL,       &mu[10],    NULL,  			0,      NULL,    			NULL,},	//2
-	{ "4.修改密码",     0,  &mu[4],     &mu[2],     NULL,       NULL,       SetPassWord,    0,      NULL,    			NULL,},	//3
+	{ "3.延时参数",     0,  &mu[3],     &mu[1],     NULL,       &mu[10],    NULL,  			0,      NULL,    			NULL,},	//2
+	{ "4.系统设置",     0,  &mu[4],     &mu[2],     NULL,       &mu[16],    NULL,    		0,      NULL,    			NULL,},	//3
 	{ "5.恢复出厂",     0,  NULL,       &mu[3],     NULL,       NULL,       SetUSERDefault, 0,      NULL,               NULL,},	//4  
 	{ "预留",           0,  NULL,       NULL,       NULL,       NULL,       NULL,           0,      NULL,               NULL,},	//5
 	{ "1.矿粉量查询",   0,  &mu[7],     NULL,       &mu[1],     NULL,       QueryAD,        0,      NULL,               NULL,},	//6
@@ -26,11 +26,11 @@ struct MENU mu[MENU_MAX_ITEM] =
 	{ "3.断开时间(s)",  0,  &mu[13],    &mu[11],    &mu[2],     NULL,       QueryOffdelay,  0,      NULL,               NULL,},	//12
 	{ "4.矿粉量标准化", 0,  NULL,       &mu[12],    &mu[2],     NULL,       AdjKFZero,      0,      NULL,               NULL,},	//13
 	{ "1.开启工作",     0,  &mu[15],    NULL,       &mu[0],     NULL,       SWITCHEnalbe,   0,      NULL,               NULL,},	//14
-	{ "2.停止工作",     0,  NULL,       &mu[14],    &mu[0],     NULL,       SWITCHDisalbe,  0,      NULL,               NULL,},	//15
-//	{ "1.停止工作",     0,  NULL,       NULL,       &mu[0],     NULL,       SWITCHDisalbe,  0,      NULL,               NULL,},	//16
-//	{ "1.自动",         0,  &mu[16],    NULL,       &mu[0],     NULL,       SetModeAuto,    0,      NULL,               NULL,},	//17
-//	{ "2.手动",         0,  NULL,       &mu[15],    &mu[0],     NULL,       SetModeManual,  0,      NULL,               NULL,},	//18
-//  { "预留",           0,  NULL,       NULL,       NULL,       NULL,       NULL,           0,      NULL,               NULL,}, //19
+	{ "2.停止工作",     0,  NULL,       &mu[14],    &mu[0],     NULL,       SetModeAuto,    0,      NULL,               NULL,},	//15
+	{ "1.站点编号",     0,  &mu[17],    NULL,       &mu[3],     NULL,       Setlinenumber,  0,   	NULL,               NULL,},	//16
+	{ "2.设备编号",     0,  &mu[18],    &mu[17],    &mu[3],     NULL,       Setbusnumber,   0,      NULL,               NULL,},	//17
+	{ "3.修改密码",     0,  NULL,       &mu[18],    &mu[3],     NULL,       SetPassWord,    0,      NULL,               NULL,},	//18
+	//{ "预留",           0,  NULL,       NULL,       NULL,       NULL,       NULL,           0,      NULL,               NULL,}, //19
 
 };
 
@@ -3559,7 +3559,7 @@ void SetUSERDefault(INT8U param)
 
 //  DevStat.switch_on_delay = 1000;
 //  DevStat.switch_interval = 1000;   //ms为单位
-	for(i=0;i<8;i++)
+	for( i=0;i<4;i++ )
 	{
 //  	memset((void *)&DevStat.MOD_REG.REG_DETAIL.switch_on_delay[0], 0x07D0, 8);
 //  	memset((void *)&DevStat.MOD_REG.REG_DETAIL.switch_interval[0], 0x07D0, 8);
@@ -3708,7 +3708,7 @@ void Querydelay(INT8U param)
 		return;
 	}
 
-	for(;;)
+	for( ;; )
 	{
 		OS_ENTER_CRITICAL();
 		sprintf((void *)buf, "0:%1.2f  1:%1.2f  ", (DevStat.MOD_REG.REG_DETAIL.switch_delay[0])/1000.0, DevStat.MOD_REG.REG_DETAIL.switch_delay[1]/1000.0);
@@ -3719,16 +3719,16 @@ void Querydelay(INT8U param)
 		sprintf((void *)buf, "2:%1.2f  3:%1.2f  ", DevStat.MOD_REG.REG_DETAIL.switch_delay[2]/1000.0, DevStat.MOD_REG.REG_DETAIL.switch_delay[3]/1000.0);
 		OS_EXIT_CRITICAL();
 		lcddisp(1, 0, buf);
-
-		OS_ENTER_CRITICAL();
-		sprintf((void *)buf, "4:%1.2f  5:%1.2f  ", DevStat.MOD_REG.REG_DETAIL.switch_delay[4]/1000.0, DevStat.MOD_REG.REG_DETAIL.switch_delay[5]/1000.0);
-		OS_EXIT_CRITICAL();
-		lcddisp(2, 0, buf);
-
-		OS_ENTER_CRITICAL();
-		sprintf((void *)buf, "6:%1.2f  7:%1.2f  ", DevStat.MOD_REG.REG_DETAIL.switch_delay[6]/1000.0, DevStat.MOD_REG.REG_DETAIL.switch_delay[7]/1000.0);
-		OS_EXIT_CRITICAL();
-		lcddisp(3, 0, buf);
+//
+//  	OS_ENTER_CRITICAL();
+//  	sprintf((void *)buf, "4:%1.2f  5:%1.2f  ", DevStat.MOD_REG.REG_DETAIL.switch_delay[4]/1000.0, DevStat.MOD_REG.REG_DETAIL.switch_delay[5]/1000.0);
+//  	OS_EXIT_CRITICAL();
+//  	lcddisp(2, 0, buf);
+//
+//  	OS_ENTER_CRITICAL();
+//  	sprintf((void *)buf, "6:%1.2f  7:%1.2f  ", DevStat.MOD_REG.REG_DETAIL.switch_delay[6]/1000.0, DevStat.MOD_REG.REG_DETAIL.switch_delay[7]/1000.0);
+//  	OS_EXIT_CRITICAL();
+//  	lcddisp(3, 0, buf);
 
 		key = delay_and_wait_key_ms(5000, 0, 0);
 		switch ( key )
@@ -3802,15 +3802,15 @@ void QueryOndelay(INT8U param)
 		OS_EXIT_CRITICAL();
 		lcddisp(1, 0, buf);
 
-		OS_ENTER_CRITICAL();
-		sprintf((void *)buf, "4:%1.2f  5:%1.2f  ", DevStat.MOD_REG.REG_DETAIL.switch_on_delay[4]/1000.0, DevStat.MOD_REG.REG_DETAIL.switch_on_delay[5]/1000.0);
-		OS_EXIT_CRITICAL();
-		lcddisp(2, 0, buf);
-
-		OS_ENTER_CRITICAL();
-		sprintf((void *)buf, "6:%1.2f  7:%1.2f  ", DevStat.MOD_REG.REG_DETAIL.switch_on_delay[6]/1000.0, DevStat.MOD_REG.REG_DETAIL.switch_on_delay[7]/1000.0);
-		OS_EXIT_CRITICAL();
-		lcddisp(3, 0, buf);
+//  	OS_ENTER_CRITICAL();
+//  	sprintf((void *)buf, "4:%1.2f  5:%1.2f  ", DevStat.MOD_REG.REG_DETAIL.switch_on_delay[4]/1000.0, DevStat.MOD_REG.REG_DETAIL.switch_on_delay[5]/1000.0);
+//  	OS_EXIT_CRITICAL();
+//  	lcddisp(2, 0, buf);
+//
+//  	OS_ENTER_CRITICAL();
+//  	sprintf((void *)buf, "6:%1.2f  7:%1.2f  ", DevStat.MOD_REG.REG_DETAIL.switch_on_delay[6]/1000.0, DevStat.MOD_REG.REG_DETAIL.switch_on_delay[7]/1000.0);
+//  	OS_EXIT_CRITICAL();
+//  	lcddisp(3, 0, buf);
 
 		key = delay_and_wait_key_ms(5000, 0, 0);
 		switch ( key )
@@ -3882,15 +3882,15 @@ void QueryOffdelay(INT8U param)
 		OS_EXIT_CRITICAL();
 		lcddisp(1, 0, buf);
 
-		OS_ENTER_CRITICAL();
-		sprintf((void *)buf, "4:%1.2f  5:%1.2f  ", DevStat.MOD_REG.REG_DETAIL.switch_interval[4]/1000.0, DevStat.MOD_REG.REG_DETAIL.switch_interval[5]/1000.0);
-		OS_EXIT_CRITICAL();
-		lcddisp(2, 0, buf);
-
-		OS_ENTER_CRITICAL();
-		sprintf((void *)buf, "6:%1.2f  7:%1.2f  ", DevStat.MOD_REG.REG_DETAIL.switch_interval[6]/1000.0, DevStat.MOD_REG.REG_DETAIL.switch_interval[7]/1000.0);
-		OS_EXIT_CRITICAL();
-		lcddisp(3, 0, buf);
+//  	OS_ENTER_CRITICAL();
+//  	sprintf((void *)buf, "4:%1.2f  5:%1.2f  ", DevStat.MOD_REG.REG_DETAIL.switch_interval[4]/1000.0, DevStat.MOD_REG.REG_DETAIL.switch_interval[5]/1000.0);
+//  	OS_EXIT_CRITICAL();
+//  	lcddisp(2, 0, buf);
+//
+//  	OS_ENTER_CRITICAL();
+//  	sprintf((void *)buf, "6:%1.2f  7:%1.2f  ", DevStat.MOD_REG.REG_DETAIL.switch_interval[6]/1000.0, DevStat.MOD_REG.REG_DETAIL.switch_interval[7]/1000.0);
+//  	OS_EXIT_CRITICAL();
+//  	lcddisp(3, 0, buf);
 
 		key = delay_and_wait_key_ms(5000, 0, 0);
 		switch ( key )
@@ -4339,14 +4339,6 @@ void AdjSwitchOndelay(INT8U param)
 	for ( ;; )
 	{
 		OS_ENTER_CRITICAL();
-//  	if ((DevStat.MOD_REG.reg[0x004A] & 0x8000) == 0)        //看是否为正
-//  	{
-//  		temp_int32s = (INT32S)DevStat.MOD_REG.reg[0x004A];
-//  	}
-//  	else
-//  	{
-//  		temp_int32s = 0 - (INT32S)(DevStat.MOD_REG.reg[0x004A] & (~0x8000));
-//  	}
 		temp_int16s = (INT16S)DevStat.MOD_REG.REG_DETAIL.switch_on_delay[param];
 		sprintf((void *)buf, "通电时间%1.2f(s)", _fflt(temp_int16s)/1000.0);
 		OS_EXIT_CRITICAL();
@@ -4450,158 +4442,259 @@ void ParamInit(INT8U param)
 	lcddisp(2, 0, "    初始化成功  ");
 	OSTimeDlyHMSM(0, 0, 1, 0);
 }
+//
+///*****************************************************************
+//函数原型：AdjAGCZero
+//功能描述：AGC调零
+//参数描述：
+//参数名称：  输入/输出？ 类型        描述
+//-----------     ----------- ------      -------
+//
+//返  回  值：无
+//作      者  ：许岩
+//日      期：2005-08-20
+//修改历史：
+//日期        修改人      修改描述
+//------      ---------   -------------
+//*****************************************************************/
+//void AdjAGCZero(INT8U param)
+//{
+////  INT8U i = 0;
+//    INT8U buf[33] = {0};
+//    INT8U key = NO_KEY;
+//    INT32S temp_int32s = 0;
+////  INT32S adj_zero = 0;
+//    INT16U reg = 0;
+//    INT32S origin = 0;
+//
+//    param = param;
+//
+//    ToggleWD();
+//
+//    Lcd_Cls();
+//
+//    OS_ENTER_CRITICAL();
+//    reg = DevStat.MOD_REG.reg[0x000C];
+//    OS_EXIT_CRITICAL();
+//    if ( reg != 0x0000 )
+//    {
+//        lcddisp(2, 0, "请先关闭AGC 输出");
+//        BeepInputErr();
+//        (void)delay_and_wait_key(2, 0, 0);
+//        return;
+//    }
+//
+//    lcddisp(0, 0, "    AGC 调零    ");
+//    lcddisp(1, 0, "4 和8 键改变大小");
+//    lcddisp(2, 0, "按确认键执行调零");
+//
+//    for ( ;; )
+//    {
+////      ToggleWD();
+//
+//        temp_int32s = read_mod_reg((void *)&DevStat.MOD_REG.reg[0x000A]);
+//        origin = temp_int32s;       //保留原始值
+//        sprintf((void *)buf, "AGC 修正:%+7d", temp_int32s);
+//        lcddisp(3, 0, buf);
+//
+//
+//        key = delay_and_wait_key_ms(500, 0, 0);
+//        if ( key == NO_KEY )
+//            continue;
+//        else if ( key == '4' )
+//        {
+//            temp_int32s++;
+//            if ( temp_int32s > 2047 )
+//                temp_int32s = 2047;
+//            write_mod_reg((void *)&DevStat.MOD_REG.reg[0x000A], temp_int32s);
+//        }
+//        else if ( key == '8' )
+//        {
+//            temp_int32s--;
+//            if ( temp_int32s < -2047 )
+//                temp_int32s = -2047;
+//            write_mod_reg((void *)&DevStat.MOD_REG.reg[0x000A], temp_int32s);
+//        }
+//        else if ( key == KEY_ENTER )
+//        {
+//            WriteParam();
+//
+//            Lcd_Cls();
+//            lcddisp(0, 0, "    AGC 调零    ");
+//            lcddisp(2, 0, "    保存成功    ");
+//            (void)delay_and_wait_key(2, 0, 0);
+//            return;
+//        }
+//        else
+//        {
+//            write_mod_reg((void *)&DevStat.MOD_REG.reg[0x000A], origin);        //恢复初始值
+//            return;
+//        }
+//    }
+//}
+
+///*****************************************************************
+//函数原型：AdjADFull
+//功能描述：AD调满
+//参数描述：
+//参数名称：  输入/输出？ 类型        描述
+//-----------     ----------- ------      -------
+//
+//返  回  值：无
+//作      者  ：许岩
+//日      期：2005-08-20
+//修改历史：
+//日期        修改人      修改描述
+//------      ---------   -------------
+//*****************************************************************/
+//void AdjADFull(INT8U param)
+//{
+////  INT8U i = 0;
+//    INT8U buf[33] = {0};
+//    INT8U key = NO_KEY;
+////  INT16U ad[11] = {0};
+////  INT16S temp_int16s = 0;
+//    INT32S temp_int32s = 0;
+//    INT32S temp_int32s2 = 0;
+//    INT32S adj_h = 0;
+//    INT8U buf2[20] = {0};
+////  INT8U buf3[33] = {0};
+//    INT8U position = 0;
+//    AD_TYPE adj_full = 0.0;
+//    AD_TYPE adj_full_origin = 0.0;
+//
+//    param = param;
+//
+//    ToggleWD();
+//
+//    Lcd_Cls();
+//    lcddisp(0, 0, "    AD调满      ");
+//    lcddisp(2, 0, "请输入实际厚度: ");
+//    lcddisp(3, 0, "         +_ .   ");
+//
+//    strcpy((void *)buf2, "         +_ .   ");
+//    position = 10;
+//
+//    for ( ;; )
+//    {
+////      ToggleWD();
+//
+//        OS_ENTER_CRITICAL();
+//        if ( (DevStat.MOD_REG.reg[0x0003] & 0x8000) == 0 )        //看是否为正
+//        {
+//            temp_int32s = (INT32S)DevStat.MOD_REG.reg[0x0003] * 1000L
+//                          + (INT32S)DevStat.MOD_REG.reg[0x0004];
+//        }
+//        else
+//        {
+//            temp_int32s = 0 - ((INT32S)(DevStat.MOD_REG.reg[0x0003] & (~0x8000)) * 1000L)
+//                          - (INT32S)DevStat.MOD_REG.reg[0x0004];
+//        }
+//        sprintf((void *)buf, "测量厚度:%+7.3f", _fflt(temp_int32s) / 1000.0);
+//        OS_EXIT_CRITICAL();
+//        lcddisp(1, 0, buf);
+//
+//
+//        key = delay_and_wait_key_ms(500, 0, 0);
+//        switch ( key )
+//        {
+//            case '0':
+//            case '1':
+//            case '2':
+//            case '3':
+//            case '4':
+//            case '5':
+//            case '6':
+//            case '7':
+//            case '8':
+//            case '9':
+//                if ( position >= 16 )
+//                {
+//                    continue;
+//                }
+//                buf2[position] = key;
+//                position++;
+//                if ( position >= 16 )
+//                {
+//                    lcddisp(3, 0, buf2);
+//                    continue;
+//                }
+//                if ( position == 12 )         //跳过小数点
+//                    position++;
+//                buf2[position] = '_';
+//                lcddisp(3, 0, buf2);
+//                break;
+//
+//            case KEY_ENTER:
+//                adj_h = (INT32S)ascii_to_hex(buf2[10]) * 10000 + (INT32S)ascii_to_hex(buf2[11]) * 1000
+//                        + (INT32S)ascii_to_hex(buf2[13]) * 100 + (INT32S)ascii_to_hex(buf2[14]) * 10
+//                        + (INT32S)ascii_to_hex(buf2[15]);
+//                temp_int32s2 = read_mod_reg((void *)&DevStat.MOD_REG.reg[0x0009]);  //读AD调满寄存器原值
+//                OS_ENTER_CRITICAL();
+//                adj_full_origin = _fflt(temp_int32s2) / 1000.0;
+//                adj_full = _fflt(adj_h) / (_fflt(temp_int32s) / adj_full_origin);
+//                temp_int32s = abs(_dfix(adj_full * 1000.0));
+//                OS_EXIT_CRITICAL();
+//
+//                if ( temp_int32s > ADJ_AD_FULL_MAX || temp_int32s < ADJ_AD_FULL_MIN )
+//                {
+//                    lcddisp(2, 0, "调满超出范围!!  ");
+//                    BeepInputErr();
+//                    (void)delay_and_wait_key(2, 0, 0);
+//                    lcddisp(2, 0, "请输入实际厚度: ");
+//                    continue;
+//                }
+//
+//                write_mod_reg((void *)&DevStat.MOD_REG.reg[0x0009], temp_int32s);
+//                WriteParam();
+//                lcddisp(2, 0, "    保存成功    ");
+//                (void)delay_and_wait_key(2, 0, 0);
+//                return;
+//
+//            case KEY_CANCEL:
+//                return;
+//
+//            default:
+//                continue;
+//        }
+//    }
+//}
 
 /*****************************************************************
-函数原型：AdjAGCZero
-功能描述：AGC调零
+函数原型：Setlinenumber
+功能描述：设置商户编号
 参数描述：
-参数名称：  输入/输出？ 类型        描述
------------     ----------- ------      -------
-
+参数名称：	输入/输出？	类型		描述
+	无
 返  回  值：无
-作      者  ：许岩
-日      期：2005-08-20
+作      者	：刘及华
+日      期：2014-08-20
 修改历史：
-日期        修改人      修改描述
-------      ---------   -------------
+日期		修改人		修改描述
+------		---------	-------------
 *****************************************************************/
-void AdjAGCZero(INT8U param)
+void Setlinenumber(INT8U param)
 {
-//  INT8U i = 0;
-	INT8U buf[33] = {0};
+//	char i = 0;
 	INT8U key = NO_KEY;
-	INT32S temp_int32s = 0;
-//  INT32S adj_zero = 0;
-	INT16U reg = 0;
-	INT32S origin = 0;
-
-	param = param;
-
-	ToggleWD();
-
-	Lcd_Cls();
-
-	OS_ENTER_CRITICAL();
-	reg = DevStat.MOD_REG.reg[0x000C];
-	OS_EXIT_CRITICAL();
-	if ( reg != 0x0000 )
-	{
-		lcddisp(2, 0, "请先关闭AGC 输出");
-		BeepInputErr();
-		(void)delay_and_wait_key(2, 0, 0);
-		return;
-	}
-
-	lcddisp(0, 0, "    AGC 调零    ");
-	lcddisp(1, 0, "4 和8 键改变大小");
-	lcddisp(2, 0, "按确认键执行调零");
-
-	for ( ;; )
-	{
-//      ToggleWD();
-
-		temp_int32s = read_mod_reg((void *)&DevStat.MOD_REG.reg[0x000A]);
-		origin = temp_int32s;		//保留原始值
-		sprintf((void *)buf, "AGC 修正:%+7d", temp_int32s);
-		lcddisp(3, 0, buf);
-
-
-		key = delay_and_wait_key_ms(500, 0, 0);
-		if ( key == NO_KEY )
-			continue;
-		else if ( key == '4' )
-		{
-			temp_int32s++;
-			if ( temp_int32s > 2047 )
-				temp_int32s = 2047;
-			write_mod_reg((void *)&DevStat.MOD_REG.reg[0x000A], temp_int32s);
-		}
-		else if ( key == '8' )
-		{
-			temp_int32s--;
-			if ( temp_int32s < -2047 )
-				temp_int32s = -2047;
-			write_mod_reg((void *)&DevStat.MOD_REG.reg[0x000A], temp_int32s);
-		}
-		else if ( key == KEY_ENTER )
-		{
-			WriteParam();
-
-			Lcd_Cls();
-			lcddisp(0, 0, "    AGC 调零    ");
-			lcddisp(2, 0, "    保存成功    ");
-			(void)delay_and_wait_key(2, 0, 0);
-			return;
-		}
-		else
-		{
-			write_mod_reg((void *)&DevStat.MOD_REG.reg[0x000A], origin);		//恢复初始值
-			return;
-		}
-	}
-}
-
-/*****************************************************************
-函数原型：AdjADFull
-功能描述：AD调满
-参数描述：
-参数名称：  输入/输出？ 类型        描述
------------     ----------- ------      -------
-
-返  回  值：无
-作      者  ：许岩
-日      期：2005-08-20
-修改历史：
-日期        修改人      修改描述
-------      ---------   -------------
-*****************************************************************/
-void AdjADFull(INT8U param)
-{
-//  INT8U i = 0;
-	INT8U buf[33] = {0};
-	INT8U key = NO_KEY;
-//  INT16U ad[11] = {0};
-//  INT16S temp_int16s = 0;
-	INT32S temp_int32s = 0;
-	INT32S temp_int32s2 = 0;
-	INT32S adj_h = 0;
+	INT8U buf[20];
 	INT8U buf2[20] = {0};
-//  INT8U buf3[33] = {0};
 	INT8U position = 0;
-	AD_TYPE adj_full = 0.0;
-	AD_TYPE adj_full_origin = 0.0;
-
-	param = param;
 
 	ToggleWD();
 
+	memset(buf, 0x00, sizeof(buf));
+	//请输入密码
 	Lcd_Cls();
-	lcddisp(0, 0, "    AD调满      ");
-	lcddisp(2, 0, "请输入实际厚度: ");
-	lcddisp(3, 0, "         +_ .   ");
+	lcddisp(0, 0, "  站点编号设置  ");
+	sprintf((void *)buf,  "站点号:%02x%02x ", DevStat.line_number[0], DevStat.line_number[1]);
+	lcddisp(1, 0, buf);
+	strcpy((void *)buf2, "站点号:         ");
+	position = 7;
 
-	strcpy((void *)buf2, "         +_ .   ");
-	position = 10;
-
-	for ( ;; )
+	for( ;; )
 	{
-//      ToggleWD();
-
-		OS_ENTER_CRITICAL();
-		if ( (DevStat.MOD_REG.reg[0x0003] & 0x8000) == 0 )		  //看是否为正
-		{
-			temp_int32s = (INT32S)DevStat.MOD_REG.reg[0x0003] * 1000L
-						  + (INT32S)DevStat.MOD_REG.reg[0x0004];
-		}
-		else
-		{
-			temp_int32s = 0 - ((INT32S)(DevStat.MOD_REG.reg[0x0003] & (~0x8000)) * 1000L)
-						  - (INT32S)DevStat.MOD_REG.reg[0x0004];
-		}
-		sprintf((void *)buf, "测量厚度:%+7.3f", _fflt(temp_int32s) / 1000.0);
-		OS_EXIT_CRITICAL();
-		lcddisp(1, 0, buf);
-
+		ToggleWD();
 
 		key = delay_and_wait_key_ms(500, 0, 0);
 		switch ( key )
@@ -4616,46 +4709,30 @@ void AdjADFull(INT8U param)
 			case '7':
 			case '8':
 			case '9':
-				if ( position >= 16 )
+				if ( position >= 11 )
 				{
 					continue;
 				}
 				buf2[position] = key;
 				position++;
-				if ( position >= 16 )
+				if ( position >= 11 )
 				{
-					lcddisp(3, 0, buf2);
+					lcddisp(1, 0, buf2);
 					continue;
 				}
-				if ( position == 12 )		  //跳过小数点
-					position++;
-				buf2[position] = '_';
-				lcddisp(3, 0, buf2);
+				lcddisp(1, 0, buf2);
 				break;
 
-			case KEY_ENTER:
-				adj_h = (INT32S)ascii_to_hex(buf2[10]) * 10000 + (INT32S)ascii_to_hex(buf2[11]) * 1000 
-						+ (INT32S)ascii_to_hex(buf2[13]) * 100 + (INT32S)ascii_to_hex(buf2[14]) * 10 
-						+ (INT32S)ascii_to_hex(buf2[15]);
-				temp_int32s2 = read_mod_reg((void *)&DevStat.MOD_REG.reg[0x0009]);	//读AD调满寄存器原值
+		   case KEY_ENTER:
+
 				OS_ENTER_CRITICAL();
-				adj_full_origin = _fflt(temp_int32s2) / 1000.0;
-				adj_full = _fflt(adj_h) / (_fflt(temp_int32s) / adj_full_origin);
-				temp_int32s = abs(_dfix(adj_full * 1000.0));
+				atoh((INT8U *)&DevStat.line_number[0], (INT8U *)&buf2[7], 4);
 				OS_EXIT_CRITICAL();
 
-				if ( temp_int32s > ADJ_AD_FULL_MAX || temp_int32s < ADJ_AD_FULL_MIN )
-				{
-					lcddisp(2, 0, "调满超出范围!!  ");
-					BeepInputErr();
-					(void)delay_and_wait_key(2, 0, 0);
-					lcddisp(2, 0, "请输入实际厚度: ");
-					continue;
-				}
-
-				write_mod_reg((void *)&DevStat.MOD_REG.reg[0x0009], temp_int32s);
 				WriteParam();
+				Lcd_Cls();
 				lcddisp(2, 0, "    保存成功    ");
+				Beep(500);
 				(void)delay_and_wait_key(2, 0, 0);
 				return;
 
@@ -4666,6 +4743,94 @@ void AdjADFull(INT8U param)
 				continue;
 		}
 	}
+	
+	return ;
 }
 
 
+/*****************************************************************
+函数原型：Setbusnumber
+功能描述：设置设备编号
+参数描述：
+参数名称：	输入/输出？	类型		描述
+	无
+返  回  值：无
+作      者	：刘及华
+日      期：2014-08-20
+修改历史：
+日期		修改人		修改描述
+------		---------	-------------
+*****************************************************************/
+void Setbusnumber(INT8U param)
+{
+//	char i = 0;
+	INT8U key = NO_KEY;
+	INT8U buf[20];
+	INT8U buf2[20] = {0};
+	INT8U position = 0;
+
+	ToggleWD();
+
+	memset(buf, 0x00, sizeof(buf));
+	//请输入密码
+	Lcd_Cls();
+	lcddisp(0, 0, "  设备编号设置  ");
+	sprintf((void *)buf,  "设备号:%02x%02x ", DevStat.bus_number[0], DevStat.bus_number[1]);
+	lcddisp(1, 0, buf);
+	strcpy((void *)buf2, "设备号:         ");
+	position = 7;
+
+	for( ;; )
+	{
+		ToggleWD();
+
+		key = delay_and_wait_key_ms(500, 0, 0);
+		switch ( key )
+		{
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+				if ( position >= 11 )
+				{
+					continue;
+				}
+				buf2[position] = key;
+				position++;
+				if ( position >= 11 )
+				{
+					lcddisp(1, 0, buf2);
+					continue;
+				}
+				lcddisp(1, 0, buf2);
+				break;
+
+		   case KEY_ENTER:
+
+				OS_ENTER_CRITICAL();
+				atoh((INT8U *)&DevStat.bus_number[0], (INT8U *)&buf2[7], 4);
+				OS_EXIT_CRITICAL();
+
+				WriteParam();
+				Lcd_Cls();
+				lcddisp(2, 0, "    保存成功    ");
+				Beep(500);
+				(void)delay_and_wait_key(2, 0, 0);
+				return;
+
+			case KEY_CANCEL:
+				return;
+
+			default:
+				continue;
+		}
+	}
+	
+	return ;
+}
